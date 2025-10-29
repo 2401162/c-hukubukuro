@@ -21,5 +21,14 @@
         <p><a href="rogin-mail-input.php">パスワードを忘れた方はこちら</a></p>
         <p><a href="new-member-input.php">新規会員登録はこちら</a></p>
     </div>
+    <style>
+    .header {
+        text-align: left;
+        margin-bottom: 30px;
+    }
+    .rogin {
+        margin-left: 20px;
+    }
+    </style>
 </body>
 </html>
