@@ -11,14 +11,16 @@
     <img src="images/logo.png" alt="サイトロゴ">
     </div>
     <div class="content">
-        <div class="rogin">
-          <p>メールアドレス</p>
-          <input type="email" name="email" size="40" maxlength="255" class="email">
-          <p>パスワード</p>
-          <input type="password" name="password" size="40" maxlength="255" class="password">
-          <p>
-          <input type="submit" value="ログイン" class="button">
-        </div>
+                <div class="rogin">
+                    <form method="post" action="rogin-output.php">
+                        <p>メールアドレス</p>
+                        <input type="email" name="email" size="40" maxlength="255" class="email" required>
+                        <p>パスワード</p>
+                        <input type="password" name="password" size="40" maxlength="255" class="password" required>
+                        <p>
+                        <input type="submit" value="ログイン" class="button">
+                    </form>
+                </div>
         </p> 
         <div class="password-reset">
         <p><a href="rogin-mail-input.php">パスワードを忘れた方はこちら</a></p>
