@@ -13,21 +13,35 @@
     <div class="content">
                 <div class="customer-input">
 
+                    <?php
+                    // 戻るで編集するために POST された値をここで受け取り、フォームに再セットします
+                    $prev_name_sei = isset($_POST['name_sei']) ? htmlspecialchars($_POST['name_sei'], ENT_QUOTES, 'UTF-8') : '';
+                    $prev_name_mei = isset($_POST['name_mei']) ? htmlspecialchars($_POST['name_mei'], ENT_QUOTES, 'UTF-8') : '';
+                    $prev_email = isset($_POST['email']) ? htmlspecialchars($_POST['email'], ENT_QUOTES, 'UTF-8') : '';
+                    $prev_password = isset($_POST['password']) ? htmlspecialchars($_POST['password'], ENT_QUOTES, 'UTF-8') : '';
+                    $prev_tel = isset($_POST['tel']) ? htmlspecialchars($_POST['tel'], ENT_QUOTES, 'UTF-8') : '';
+                    $prev_postal_code1 = isset($_POST['postal_code1']) ? htmlspecialchars($_POST['postal_code1'], ENT_QUOTES, 'UTF-8') : '';
+                    $prev_postal_code2 = isset($_POST['postal_code2']) ? htmlspecialchars($_POST['postal_code2'], ENT_QUOTES, 'UTF-8') : '';
+                    $prev_prefecture = isset($_POST['prefecture']) ? htmlspecialchars($_POST['prefecture'], ENT_QUOTES, 'UTF-8') : '';
+                    $prev_city = isset($_POST['city']) ? htmlspecialchars($_POST['city'], ENT_QUOTES, 'UTF-8') : '';
+                    $prev_address = isset($_POST['address']) ? htmlspecialchars($_POST['address'], ENT_QUOTES, 'UTF-8') : '';
+                    $prev_building = isset($_POST['building']) ? htmlspecialchars($_POST['building'], ENT_QUOTES, 'UTF-8') : '';
+                    ?>
                     <form method="post" action="customer-newinput.php">
                         <label>姓<br>
-                            <input type="text" name="name_sei" maxlength="255" class="name">
+                            <input type="text" name="name_sei" maxlength="255" class="name" value="<?php echo $prev_name_sei; ?>">
                         </label>
 
                         <label>名<br>
-                            <input type="text" name="name_mei" maxlength="255" class="name">
+                            <input type="text" name="name_mei" maxlength="255" class="name" value="<?php echo $prev_name_mei; ?>">
                         </label>
 
                         <label>メールアドレス<br>
-                            <input type="email" name="email" maxlength="255" class="email">
+                            <input type="email" name="email" maxlength="255" class="email" value="<?php echo $prev_email; ?>">
                         </label>
 
                         <label>パスワード<br>
-                            <input type="password" name="password" maxlength="255" class="password">
+                            <input type="password" name="password" maxlength="255" class="password" value="<?php echo $prev_password; ?>">
                         </label>
 
                         <label>電話番号<br>
@@ -35,8 +49,8 @@
                         </label>
 
                         <label>郵便番号<br>
-                            <input type="text" id="postal_code1" name="postal_code1" size="4" maxlength="3" class="postal"> -
-                            <input type="text" id="postal_code2" name="postal_code2" size="4" maxlength="4" class="postal">
+                            <input type="text" id="postal_code1" name="postal_code1" size="4" maxlength="3" class="postal" value="<?php echo $prev_postal_code1; ?>"> -
+                            <input type="text" id="postal_code2" name="postal_code2" size="4" maxlength="4" class="postal" value="<?php echo $prev_postal_code2; ?>">
                         </label>
                         <p id="zip-error" style="color:#c00; width:80%; margin:4px auto 0 auto; text-align:left; display:none;"></p>
 
@@ -94,15 +108,15 @@
                         </label>
 
                         <label>市町村区<br>
-                            <input type="text" name="city" maxlength="255" class="city">
+                            <input type="text" name="city" maxlength="255" class="city" value="<?php echo $prev_city; ?>">
                         </label>
 
                         <label>番地<br>
-                            <input type="text" name="address" maxlength="255" class="address">
+                            <input type="text" name="address" maxlength="255" class="address" value="<?php echo $prev_address; ?>">
                         </label>
 
                         <label>建物名（アパート・マンションなど）<br>
-                            <input type="text" name="building" maxlength="255" class="building">
+                            <input type="text" name="building" maxlength="255" class="building" value="<?php echo $prev_building; ?>">
                         </label>
 
                                                 <p><input type="submit" value="次へ" class="button"></p>
@@ -213,6 +227,14 @@
             const prefecture = document.getElementById('prefecture');
             const city = document.querySelector('input[name="city"]');
             const address = document.querySelector('input[name="address"]');
+
+                        // PHPからの事前値がある場合、都道府県を設定
+                        try{
+                            const prevPref = '<?php echo isset($prev_prefecture) ? $prev_prefecture : ''; ?>';
+                            if(prevPref){
+                                for(const opt of prefecture.options){ if(opt.value === prevPref){ opt.selected = true; break; } }
+                            }
+                        }catch(e){/* ignore */}
 
             function lookupZip(){
                 const v1 = p1.value.trim();
