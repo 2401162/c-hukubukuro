@@ -84,8 +84,44 @@
             echo "<p><strong>電話番号:</strong> " . $tel_html . "</p>";
             // パスワードは伏せて表示
             echo "<p><strong>パスワード:</strong> " . str_repeat('*', mb_strlen($password)) . "</p>";
-            // 次の処理（登録実行等）へのフォームやボタンを追加することも可能
-            echo "<p><a href=\"javascript:history.back()\">戻る</a> | <a href=\"member-register.php\">この内容で登録する</a></p>";
+            // ハッシュ化して登録用に送る（パスワードはここでハッシュ化して送信）
+            $password_hash = password_hash($password, PASSWORD_DEFAULT);
+
+            // 戻る（編集）用フォーム：元の生パスワードを含めて customer-input.php に POST することで入力を保持
+            echo '<div style="margin-top:12px;">';
+            echo '<form method="post" action="customer-input.php" style="display:inline-block; margin-right:12px;">';
+            // 生データを hidden で送る（戻って編集するため）
+            echo '<input type="hidden" name="name_sei" value="' . htmlspecialchars($name_sei, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="name_mei" value="' . htmlspecialchars($name_mei, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="email" value="' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="password" value="' . htmlspecialchars($password, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="tel" value="' . htmlspecialchars($tel, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="postal_code1" value="' . htmlspecialchars($postal_code1, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="postal_code2" value="' . htmlspecialchars($postal_code2, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="prefecture" value="' . htmlspecialchars($prefecture, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="city" value="' . htmlspecialchars($city, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="address" value="' . htmlspecialchars($address, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="building" value="' . htmlspecialchars($building, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="submit" value="戻るして編集" class="button">';
+            echo '</form>';
+
+            // 登録実行用フォーム：パスワードはハッシュ化して送信
+            echo '<form method="post" action="member-register.php" style="display:inline-block;">';
+            echo '<input type="hidden" name="name_sei" value="' . htmlspecialchars($name_sei, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="name_mei" value="' . htmlspecialchars($name_mei, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="email" value="' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . '">';
+            // こちらはハッシュ化したパスワードを送る
+            echo '<input type="hidden" name="password" value="' . htmlspecialchars($password_hash, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="tel" value="' . htmlspecialchars($tel, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="postal_code1" value="' . htmlspecialchars($postal_code1, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="postal_code2" value="' . htmlspecialchars($postal_code2, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="prefecture" value="' . htmlspecialchars($prefecture, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="city" value="' . htmlspecialchars($city, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="address" value="' . htmlspecialchars($address, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="building" value="' . htmlspecialchars($building, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="submit" value="この内容で登録する" class="button">';
+            echo '</form>';
+            echo '</div>';
         }
     } else {
         echo "<p>フォームが正しく送信されていません。</p>";
