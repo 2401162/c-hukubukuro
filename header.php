@@ -82,7 +82,7 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
   <div class="brand">
     <!-- ロゴ画像（例：/images/logo.png に丸い「福」アイコン等） -->
     <a href="/index.php" class="image is-48x48" aria-label="ホームへ">
-      <img src="/images/" alt="サイトロゴ" class="site-logo">
+      <img src="/images/ChatGPT Image 2025年11月5日 11_38_53.png" alt="サイトロゴ" class="site-logo">
     </a>
     <span class="site-title">福袋</span>
   </div>
