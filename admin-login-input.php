@@ -57,7 +57,7 @@
 <body>
   <h1>管理者ページログイン</h1>
   <div class="login-box">
-    <form>
+    <form action="admin-login-output.php" method="post">
       <label for="admin-id">管理者ID</label>
       <input type="text" id="admin-id" name="admin-id" required>
       
