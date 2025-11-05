@@ -1,6 +1,7 @@
 <?php
-// 簡易ログイン処理（デモ）：実運用ではデータベースとパスワードハッシュ照合を行ってください。
+// ログイン処理（DB 認証）
 session_start();
+require_once 'db-connect.php';
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -13,7 +14,7 @@ session_start();
     <?php include 'header.php'; ?>
     <div class="content">
 <?php
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = isset($_POST['email']) ? trim($_POST['email']) : '';
     $password = isset($_POST['password']) ? $_POST['password'] : '';
 
@@ -32,21 +33,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "</ul>";
         echo '<p><a href="rogin-input.php">ログイン画面へ戻る</a></p>';
     } else {
-        // デモ用の簡易チェック。実運用の認証は DB と password_verify を使うこと。
-        $demo_email = 'demo@example.com';
-        $demo_password = 'demo123';
+        // DB からユーザを探す
+        try {
+            $pdo = new PDO($connect, USER, PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+            $sql = 'SELECT * FROM ' . TABLE_MEMBERS . ' WHERE email = :email LIMIT 1';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':email' => $email]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($email === $demo_email && $password === $demo_password) {
-            // 認証成功
-            $_SESSION['user_email'] = $email;
-            echo "<h2>ログイン成功</h2>";
-            echo "<p>ようこそ: " . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . "</p>";
-            echo '<p><a href="index.html">トップへ</a></p>';
-        } else {
-            echo "<h2>ログイン失敗</h2>";
-            echo "<p>メールアドレスかパスワードが正しくありません。</p>";
+            if ($user && isset($user['password']) && password_verify($password, $user['password'])) {
+                // 認証成功
+                $_SESSION['user_email'] = $email;
+                echo "<h2>ログイン成功</h2>";
+                echo "<p>ようこそ: " . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . "</p>";
+                echo '<p><a href="index.php">トップへ</a></p>';
+            } else {
+                echo "<h2>ログイン失敗</h2>";
+                echo "<p>メールアドレスかパスワードが正しくありません。</p>";
+                echo '<p><a href="rogin-input.php">ログイン画面へ戻る</a></p>';
+            }
+
+        } catch (PDOException $e) {
+            // DB エラー時はログを出してデモメッセージ
+            error_log('DB error: ' . $e->getMessage());
+            echo "<h2>ログインエラー</h2>";
+            echo "<p>サーバエラーが発生しました。後ほどお試しください。</p>";
             echo '<p><a href="rogin-input.php">ログイン画面へ戻る</a></p>';
-            echo '<p>デモアカウント: demo@example.com / demo123</p>';
         }
     }
 } else {
