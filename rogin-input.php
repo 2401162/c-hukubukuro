@@ -15,7 +15,7 @@
                         <p>パスワード</p>
                         <input type="password" name="password" size="40" maxlength="255" class="password" required>
                         <p>
-                        <input type="submit" value="ログイン" class="button">
+                        <input type="submit" value="rogin" class="button">
                     </form>
                 </div>
         </p> 
