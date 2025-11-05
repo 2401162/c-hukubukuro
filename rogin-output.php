@@ -10,10 +10,7 @@ session_start();
     <title>ログイン結果</title>
 </head>
 <body>
-    <div class="header">
-        <h1>福袋販売サイト</h1>
-        <img src="images/logo.png" alt="サイトロゴ">
-    </div>
+    <?php include 'header.php'; ?>
     <div class="content">
 <?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
