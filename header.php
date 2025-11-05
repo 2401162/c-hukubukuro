@@ -11,7 +11,7 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
 <style>
   /* ヘッダー全体 */
   .site-header {
-    background: #F37C7C;          /* スクショのようなピンク系 */
+    background: #ec4c4cff;          /* スクショのようなピンク系 */
     height: 56px;
     display: flex;
     align-items: center;
