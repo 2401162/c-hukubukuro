@@ -84,7 +84,7 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
     <a href="/index.php" class="image is-48x48" aria-label="ホームへ">
       <img src="/images/ChatGPT Image 2025年11月5日 11_38_53.png" alt="サイトロゴ" class="site-logo">
     </a>
-    <span class="site-title">福袋</span>
+    <span class="site-title">福袋販売サイト</span>
   </div>
 
   <!-- 右：人アイコン／カートアイコン（Bulma＋Font Awesome） -->
