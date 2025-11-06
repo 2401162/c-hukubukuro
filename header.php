@@ -1,13 +1,10 @@
 <?php
-// header.php
-// 画面上部のヘッダー（ロゴ／ユーザー・カートアイコン）
-// ※Bulma本体とFont Awesomeはレイアウト側（親のHTML）で読み込んでください。
-//   例）
-//   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-//   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 ?>
+<!-- Font Awesome をここで明示的に読み込む（親が未読込でもアイコンが表示されるように） -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
   /* ヘッダー全体 */
   .site-header {
@@ -40,22 +37,24 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
     font-weight: 700;
     letter-spacing: .04em;
   }
+.site-header .actions {
+  display: flex;
+  align-items: center;
+  gap: 22px; /* ← 少し広めに間隔を確保 */
+}
+.site-header .actions a {
+  color: #fff;
+  font-size: 35px;        /* 大きさ維持 */
+  display: flex;           /* inline-flex → flexに変更 */
+  align-items: center;     /* 縦中央寄せ */
+  justify-content: center; /* 横中央寄せ */
+  line-height: 1;          /* ベースラインのズレ防止 */
+  gap: 8px;
+  transition: opacity .15s;
+  height: 56px;            /* ヘッダーと同じ高さにして中央固定 */
+}
 
-  /* 右：アイコン部分 */
-  .site-header .actions {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-  }
-  .site-header .actions a {
-    color: #fff;
-    font-size: 20px;              /* アイコンの大きさ */
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: opacity .15s;
-  }
-  .site-header .actions a:hover { opacity: .85; }
+.site-header .actions a:hover { opacity: .85; }
 
   /* カート個数のバッジ（必要なら） */
   .cart-badge {
@@ -75,6 +74,9 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
   @media (max-width: 480px) {
     .site-header .site-title { display: none; }
   }
+
+  /* アイコンのみ表示にする（テキストラベルを隠す） */
+  .site-header .actions a .label-text { display: none; }
 </style>
 
 <header class="site-header">
@@ -82,7 +84,8 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
   <div class="brand">
     <!-- ロゴ画像（例：/images/logo.png に丸い「福」アイコン等） -->
     <a href="/index.php" class="image is-48x48" aria-label="ホームへ">
-      <img src="/images/ChatGPT Image 2025年11月5日 11_38_53.png" alt="サイトロゴ" class="site-logo">
+      <!-- ファイル名に空白が含まれる場合があるため URL エンコードしたパスを使う -->
+      <img src="/images/ChatGPT%20Image%202025年11月5日%2011_38_53.png" alt="サイトロゴ" class="site-logo">
     </a>
     <span class="site-title">福袋販売サイト</span>
   </div>
@@ -91,13 +94,13 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
   <nav class="actions">
     <!-- マイページ or ログイン -->
     <a href="/mypage.php" aria-label="マイページ">
-      <i class="fa-solid fa-user"></i>
-      <span class="is-hidden-mobile">マイページ</span>
+      <i class="fa-solid fa-user" aria-hidden="true"></i>
+      <span class="label-text">マイページ</span>
     </a>
 
     <!-- カート -->
     <a href="/cart.php" aria-label="カート">
-      <i class="fa-solid fa-cart-shopping"></i>
+      <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
       <?php
         // 必要ならセッションからカート点数を表示（なければ0）
         $cartCount = isset($_SESSION['cart_count']) ? (int)$_SESSION['cart_count'] : 0;
@@ -105,7 +108,7 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
           echo '<span class="cart-badge" aria-label="カート内点数">'.$cartCount.'</span>';
         }
       ?>
-      <span class="is-hidden-mobile">カート</span>
+      <span class="label-text">カート</span>
     </a>
   </nav>
 </header>
