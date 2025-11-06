@@ -67,9 +67,30 @@ require_once 'db-connect.php';
 }
 ?>
     </div>
-    <style>
-    .header { display:flex; align-items:center; justify-content:center; gap:12px; margin:20px auto; }
-    .content { text-align:center; margin:0 auto; width:60%; border:1px solid #000; padding:20px; border-radius:6px; }
-    </style>
+  <style>
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column; 
+      background:#fafafa;
+    }
+    .header{
+      display:flex; align-items:center; justify-content:center;
+      gap:12px; margin:20px auto;
+    }
+    .content {
+  text-align: center;
+  margin: auto;             
+  width: min(90%, 720px);
+  border: 1px solid #000;
+  padding: 60px 40px;          
+  border-radius: 8px;
+  background: #fff;
+  box-sizing: border-box;
+  box-shadow: 0 6px 18px rgba(0,0,0,.06);
+  min-height: 300px;           
+}
+  </style>
 </body>
 </html>
