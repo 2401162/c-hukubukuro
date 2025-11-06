@@ -1,288 +1,227 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>会員登録</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>会員登録</title>
+  <style>
+    /* 画面中央に細身カードを配置 */
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      background:#fff;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif;
+    }
+    .content{
+      margin: 24px auto 40px;
+      width: 320px;                 /* 画像の細さに合わせる */
+    }
+
+    .title{
+      font-size: 18px;
+      font-weight: 700;
+      margin: 8px 0 18px;
+      color:#222;
+      text-align:left;
+    }
+
+    /* ラベルは上・入力は全幅 */
+    .form-group{
+      margin: 12px 0;
+    }
+    .form-group label{
+      display:block;
+      font-size: 12px;
+      color:#444;
+      margin-bottom:6px;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"],
+    select{
+      width:100%;
+      height:34px;
+      box-sizing:border-box;
+      border:1px solid #D9D9D9;
+      border-radius:2px;
+      padding: 6px 8px;
+      font-size:14px;
+      outline:none;
+    }
+    input::placeholder{ color:#aaa; }
+
+    /* 横並び行（姓/名・郵便番号など） */
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:flex-end;
+    }
+    .row .col{ flex:1; }
+    .row .col-narrow{ width:86px; flex:0 0 86px; }      /* 郵便番号の小さめ枠 */
+    .row .dash{
+      align-self:center;
+      color:#666;
+      font-size:14px;
+      margin:0 2px 6px;
+    }
+    /* 都道府県は選択肢の見た目を画像寄りに小さめで */
+    .pref-wrap{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .pref-wrap select{
+      width: 140px;                  /* 画像の幅感 */
+      height:34px;
+    }
+
+    /* 下部リンク */
+    .notes{
+      margin-top: 6px;
+      font-size:12px;
+      color:#666;
+    }
+
+    /* 送信ボタン（小さめ赤・中央） */
+    .actions{
+      display:flex;
+      justify-content:center;
+      margin-top:18px;
+    }
+    .button{
+      background:#E43131;            /* 赤 */
+      color:#fff;
+      border:none;
+      border-radius:4px;
+      padding: 8px 18px;
+      font-size:14px;
+      cursor:pointer;
+    }
+    .button:hover{ opacity:.9; }
+
+    /* 画像っぽい細い下線の行（市区町村・番地に雰囲気を寄せたいとき） */
+    .underline input{
+      border: none;
+      border-bottom: 1px solid #D9D9D9;
+      border-radius: 0;
+      height: 28px;
+      padding-left: 0;
+    }
+
+    /* ちょいスマホ時も同じ幅感で */
+    @media (max-width: 360px){
+      .content{ width: 92vw; }
+      .pref-wrap select{ width: 44vw; }
+    }
+  </style>
 </head>
 <body>
-    <?php include 'header.php'; ?>
-    <div class="content">
-                <div class="customer-input">
+  <?php include 'header.php'; ?>
 
-                    <?php
-                    // 戻るで編集するために POST された値をここで受け取り、フォームに再セットします
-                    $prev_name_sei = isset($_POST['name_sei']) ? htmlspecialchars($_POST['name_sei'], ENT_QUOTES, 'UTF-8') : '';
-                    $prev_name_mei = isset($_POST['name_mei']) ? htmlspecialchars($_POST['name_mei'], ENT_QUOTES, 'UTF-8') : '';
-                    $prev_email = isset($_POST['email']) ? htmlspecialchars($_POST['email'], ENT_QUOTES, 'UTF-8') : '';
-                    $prev_password = isset($_POST['password']) ? htmlspecialchars($_POST['password'], ENT_QUOTES, 'UTF-8') : '';
-                    $prev_tel = isset($_POST['tel']) ? htmlspecialchars($_POST['tel'], ENT_QUOTES, 'UTF-8') : '';
-                    $prev_postal_code1 = isset($_POST['postal_code1']) ? htmlspecialchars($_POST['postal_code1'], ENT_QUOTES, 'UTF-8') : '';
-                    $prev_postal_code2 = isset($_POST['postal_code2']) ? htmlspecialchars($_POST['postal_code2'], ENT_QUOTES, 'UTF-8') : '';
-                    $prev_prefecture = isset($_POST['prefecture']) ? htmlspecialchars($_POST['prefecture'], ENT_QUOTES, 'UTF-8') : '';
-                    $prev_city = isset($_POST['city']) ? htmlspecialchars($_POST['city'], ENT_QUOTES, 'UTF-8') : '';
-                    $prev_address = isset($_POST['address']) ? htmlspecialchars($_POST['address'], ENT_QUOTES, 'UTF-8') : '';
-                    $prev_building = isset($_POST['building']) ? htmlspecialchars($_POST['building'], ENT_QUOTES, 'UTF-8') : '';
-                    ?>
-                    <form method="post" action="customer-newinput.php">
-                        <label>姓<br>
-                            <input type="text" name="name_sei" maxlength="255" class="name" value="<?php echo $prev_name_sei; ?>">
-                        </label>
+  <div class="content">
+    <div class="title">会員登録</div>
 
-                        <label>名<br>
-                            <input type="text" name="name_mei" maxlength="255" class="name" value="<?php echo $prev_name_mei; ?>">
-                        </label>
+    <?php
+      // 戻り値の保持
+      $prev_name_sei     = isset($_POST['name_sei'])      ? htmlspecialchars($_POST['name_sei'], ENT_QUOTES, 'UTF-8') : '';
+      $prev_name_mei     = isset($_POST['name_mei'])      ? htmlspecialchars($_POST['name_mei'], ENT_QUOTES, 'UTF-8') : '';
+      $prev_email        = isset($_POST['email'])         ? htmlspecialchars($_POST['email'], ENT_QUOTES, 'UTF-8') : '';
+      $prev_password     = isset($_POST['password'])      ? htmlspecialchars($_POST['password'], ENT_QUOTES, 'UTF-8') : '';
+      $prev_tel          = isset($_POST['tel'])           ? htmlspecialchars($_POST['tel'], ENT_QUOTES, 'UTF-8') : '';
+      $prev_postal_code1 = isset($_POST['postal_code1'])  ? htmlspecialchars($_POST['postal_code1'], ENT_QUOTES, 'UTF-8') : '';
+      $prev_postal_code2 = isset($_POST['postal_code2'])  ? htmlspecialchars($_POST['postal_code2'], ENT_QUOTES, 'UTF-8') : '';
+      $prev_prefecture   = isset($_POST['prefecture'])    ? htmlspecialchars($_POST['prefecture'], ENT_QUOTES, 'UTF-8') : '';
+      $prev_city         = isset($_POST['city'])          ? htmlspecialchars($_POST['city'], ENT_QUOTES, 'UTF-8') : '';
+      $prev_address      = isset($_POST['address'])       ? htmlspecialchars($_POST['address'], ENT_QUOTES, 'UTF-8') : '';
+      $prev_building     = isset($_POST['building'])      ? htmlspecialchars($_POST['building'], ENT_QUOTES, 'UTF-8') : '';
+    ?>
 
-                        <label>メールアドレス<br>
-                            <input type="email" name="email" maxlength="255" class="email" value="<?php echo $prev_email; ?>">
-                        </label>
+    <form method="post" action="customer-newinput.php" novalidate>
+      <!-- 姓・名（横並び） -->
+      <div class="row form-group">
+        <div class="col">
+          <label>姓</label>
+          <input type="text" name="name_sei" maxlength="255" value="<?php echo $prev_name_sei; ?>">
+        </div>
+        <div class="col">
+          <label>名</label>
+          <input type="text" name="name_mei" maxlength="255" value="<?php echo $prev_name_mei; ?>">
+        </div>
+      </div>
 
-                        <label>パスワード<br>
-                            <input type="password" name="password" maxlength="255" class="password" value="<?php echo $prev_password; ?>">
-                        </label>
+      <div class="form-group">
+        <label>ユーザー名</label>
+        <input type="text" name="username" maxlength="255" placeholder="" />
+      </div>
 
-                        <label>電話番号<br>
-                            <input type="tel" name="tel" maxlength="15" class="tel">
-                        </label>
+      <div class="form-group">
+        <label>メールアドレス</label>
+        <input type="email" name="email" maxlength="255" value="<?php echo $prev_email; ?>">
+      </div>
 
-                        <label>郵便番号<br>
-                            <input type="text" id="postal_code1" name="postal_code1" size="4" maxlength="3" class="postal" value="<?php echo $prev_postal_code1; ?>"> -
-                            <input type="text" id="postal_code2" name="postal_code2" size="4" maxlength="4" class="postal" value="<?php echo $prev_postal_code2; ?>">
-                        </label>
-                        <p id="zip-error" style="color:#c00; width:80%; margin:4px auto 0 auto; text-align:left; display:none;"></p>
+      <div class="form-group">
+        <label>パスワード</label>
+        <input type="password" name="password" maxlength="255" value="<?php echo $prev_password; ?>">
+      </div>
 
-                        <label>都道府県<br>
-                            <select id="prefecture" name="prefecture" class="prefecture">
-                                <option value="">選択してください</option>
-                                <option value="北海道">北海道</option>
-                                <option value="青森県">青森県</option>
-                                <option value="岩手県">岩手県</option>
-                                <option value="宮城県">宮城県</option>
-                                <option value="秋田県">秋田県</option>
-                                <option value="山形県">山形県</option>
-                                <option value="福島県">福島県</option>
-                                <option value="茨城県">茨城県</option>
-                                <option value="栃木県">栃木県</option>
-                                <option value="群馬県">群馬県</option>
-                                <option value="埼玉県">埼玉県</option>
-                                <option value="千葉県">千葉県</option>
-                                <option value="東京都">東京都</option>
-                                <option value="神奈川県">神奈川県</option>
-                                <option value="新潟県">新潟県</option>
-                                <option value="富山県">富山県</option>
-                                <option value="石川県">石川県</option>
-                                <option value="福井県">福井県</option>
-                                <option value="山梨県">山梨県</option>
-                                <option value="長野県">長野県</option>
-                                <option value="岐阜県">岐阜県</option>
-                                <option value="静岡県">静岡県</option>
-                                <option value="愛知県">愛知県</option>
-                                <option value="三重県">三重県</option>
-                                <option value="滋賀県">滋賀県</option>
-                                <option value="京都府">京都府</option>
-                                <option value="大阪府">大阪府</option>
-                                <option value="兵庫県">兵庫県</option>
-                                <option value="奈良県">奈良県</option>
-                                <option value="和歌山県">和歌山県</option>
-                                <option value="鳥取県">鳥取県</option>
-                                <option value="島根県">島根県</option>
-                                <option value="岡山県">岡山県</option>
-                                <option value="広島県">広島県</option>
-                                <option value="山口県">山口県</option>
-                                <option value="徳島県">徳島県</option>
-                                <option value="香川県">香川県</option>
-                                <option value="愛媛県">愛媛県</option>
-                                <option value="高知県">高知県</option>
-                                <option value="福岡県">福岡県</option>
-                                <option value="佐賀県">佐賀県</option>
-                                <option value="長崎県">長崎県</option>
-                                <option value="熊本県">熊本県</option>
-                                <option value="大分県">大分県</option>
-                                <option value="宮崎県">宮崎県</option>
-                                <option value="鹿児島県">鹿児島県</option>
-                                <option value="沖縄県">沖縄県</option>
-                            </select>
-                        </label>
+      <div class="form-group">
+        <label>電話番号</label>
+        <input type="tel" name="tel" maxlength="15" value="<?php echo $prev_tel; ?>">
+      </div>
 
-                        <label>市町村区<br>
-                            <input type="text" name="city" maxlength="255" class="city" value="<?php echo $prev_city; ?>">
-                        </label>
+      <!-- 郵便番号（横並び） -->
+      <div class="form-group">
+        <label>郵便番号</label>
+        <div class="row">
+          <div class="col-narrow">
+            <input type="text" name="postal_code1" maxlength="3" value="<?php echo $prev_postal_code1; ?>">
+          </div>
+          <div class="dash">－</div>
+          <div class="col-narrow">
+            <input type="text" name="postal_code2" maxlength="4" value="<?php echo $prev_postal_code2; ?>">
+          </div>
+        </div>
+      </div>
 
-                        <label>番地<br>
-                            <input type="text" name="address" maxlength="255" class="address" value="<?php echo $prev_address; ?>">
-                        </label>
+      <!-- 都道府県（小さめ） -->
+      <div class="form-group">
+        <label>都道府県</label>
+        <div class="pref-wrap">
+          <select name="prefecture" id="prefecture">
+            <option value="">選択してください</option>
+            <?php
+              $prefs = ['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県','茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県','新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県','鳥取県','島根県','岡山県','広島県','山口県','徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'];
+              foreach($prefs as $p){
+                $sel = ($prev_prefecture===$p)?' selected':'';
+                echo "<option value=\"$p\"$sel>$p</option>";
+              }
+            ?>
+          </select>
+        </div>
+      </div>
 
-                        <label>建物名（アパート・マンションなど）<br>
-                            <input type="text" name="building" maxlength="255" class="building" value="<?php echo $prev_building; ?>">
-                        </label>
+      <div class="form-group underline">
+        <label>市区町村</label>
+        <input type="text" name="city" maxlength="255" value="<?php echo $prev_city; ?>">
+      </div>
 
-                                                <p><input type="submit" value="次へ" class="button"></p>
-                    </form>
+      <div class="form-group underline">
+        <label>番地</label>
+        <input type="text" name="address" maxlength="255" placeholder="00-00" value="<?php echo $prev_address; ?>">
+      </div>
 
-                                        <script>
-                                        // フォームのクライアント側検証
-                                        (function(){
-                                            const form = document.querySelector('form');
-                                            const zipError = document.getElementById('zip-error');
-                                            form.addEventListener('submit', function(e){
-                                                const sei = form.querySelector('input[name="name_sei"]').value.trim();
-                                                const mei = form.querySelector('input[name="name_mei"]').value.trim();
-                                                const email = form.querySelector('input[name="email"]').value.trim();
-                                                const password = form.querySelector('input[name="password"]').value;
-                                                const p1 = form.querySelector('input[name="postal_code1"]').value.trim();
-                                                const p2 = form.querySelector('input[name="postal_code2"]').value.trim();
-                                                const city = form.querySelector('input[name="city"]').value.trim();
-                                                const addr = form.querySelector('input[name="address"]').value.trim();
-                                                // 必須チェック
-                                                if(!sei || !mei || !email || !password || !p1 || !p2 || !city || !addr){
-                                                    alert('必須項目を全て入力してください（姓・名・メール・パスワード・郵便番号・市区町村・番地）');
-                                                    e.preventDefault();
-                                                    return false;
-                                                }
-                                                // email 形式チェック（簡易）
-                                                if(!/^\S+@\S+\.\S+$/.test(email)){
-                                                    alert('正しいメールアドレスを入力してください');
-                                                    e.preventDefault();
-                                                    return false;
-                                                }
-                                                // パスワード長チェック
-                                                if(password.length < 6){
-                                                    alert('パスワードは6文字以上で入力してください');
-                                                    e.preventDefault();
-                                                    return false;
-                                                }
-                                                // 郵便番号数値チェック
-                                                if(!/^\d{3}$/.test(p1) || !/^\d{4}$/.test(p2)){
-                                                    alert('郵便番号は3桁-4桁で入力してください（数字のみ）');
-                                                    e.preventDefault();
-                                                    return false;
-                                                }
-                                                // 問題なければ送信
-                                                return true;
-                                            });
-                                        })();
-                                        </script>
+      <div class="form-group">
+        <label>建物名（アパート、マンションなど）</label>
+        <input type="text" name="building" maxlength="255" value="<?php echo $prev_building; ?>">
+      </div>
 
-                </div>
-    </div>
-    <style>
-    .header {
-        display: flex;
-        align-items: center;
-        justify-content: center; 
-        gap: 12px; 
-        margin: 20px auto;
-    }
-    .header h1 {
-        margin: 0;
-        font-size: 1.6rem;
-    }
-    .header img {
-        width: 60px;
-        height: auto;
-        display: block;
-    }
-    .content {
-        text-align: center;
-        margin: 0 auto 30px auto; 
-        border-color: #000;
-        border-style: solid;
-        border-width: 1px;
-        border-radius: 4px;
-        width: 50%;
-        padding: 20px;
-        box-sizing: border-box;
-    }
-    .customer-input {
-        text-align: center;
-        width: 100%;
-    }
-        .customer-input label {
-                display: block;
-                width: 80%;
-                margin: 8px auto;
-                text-align: left;
-        }
-        .customer-input input[type="text"],
-        .customer-input input[type="email"],
-        .customer-input input[type="password"],
-        .customer-input input[type="tel"],
-        .customer-input select {
-                width: 100%;
-                padding: 8px;
-                box-sizing: border-box;
-                margin-top: 6px;
-        }
-        .customer-input .postal { width: 48%; display: inline-block; }
-        .button { background-color: #000; color: #fff; padding: 10px 20px; border-radius:4px; border:none; }
-    </style>
-        <script>
-        // 郵便番号から住所を取得して自動補完（zipcloud）
-        (function(){
-            const p1 = document.getElementById('postal_code1');
-            const p2 = document.getElementById('postal_code2');
-            const prefecture = document.getElementById('prefecture');
-            const city = document.querySelector('input[name="city"]');
-            const address = document.querySelector('input[name="address"]');
-
-                        // PHPからの事前値がある場合、都道府県を設定
-                        try{
-                            const prevPref = '<?php echo isset($prev_prefecture) ? $prev_prefecture : ''; ?>';
-                            if(prevPref){
-                                for(const opt of prefecture.options){ if(opt.value === prevPref){ opt.selected = true; break; } }
-                            }
-                        }catch(e){/* ignore */}
-
-            function lookupZip(){
-                const v1 = p1.value.trim();
-                const v2 = p2.value.trim();
-                const zipErrorEl = document.getElementById('zip-error');
-                zipErrorEl.style.display = 'none';
-                zipErrorEl.textContent = '';
-                if(!v1 || !v2) return;
-                const zipcode = v1 + v2;
-                // zipcloud API
-                fetch('https://zipcloud.ibsnet.co.jp/api/search?zipcode=' + zipcode)
-                    .then(res=>res.json())
-                    .then(data=>{
-                        if(data && data.results && data.results.length){
-                            const r = data.results[0];
-                            // r.address1=都道府県, address2=市区町村, address3=町域
-                            const a1 = r.address1 || '';
-                            const a2 = r.address2 || '';
-                            const a3 = r.address3 || '';
-                            // 都道府県を選択
-                            let matched = false;
-                            for(const opt of prefecture.options){
-                                if(opt.value === a1){ opt.selected = true; matched = true; break; }
-                            }
-                            city.value = a2;
-                            address.value = a3;
-                            if(!matched){
-                                // prefecture value not found in select (rare)
-                                zipErrorEl.textContent = '注意：APIの都道府県が選択肢と一致しません。手動で確認してください。';
-                                zipErrorEl.style.display = 'block';
-                            }
-                        } else {
-                            // 見つからない場合はエラーメッセージを表示
-                            zipErrorEl.textContent = '郵便番号に該当する住所が見つかりませんでした。手動で入力してください。';
-                            zipErrorEl.style.display = 'block';
-                        }
-                    })
-                    .catch(err=>{
-                        console.log('zip lookup error', err);
-                        zipErrorEl.textContent = '住所検索でエラーが発生しました。後ほど再度お試しください。';
-                        zipErrorEl.style.display = 'block';
-                    });
-            }
-
-            p1.addEventListener('blur', lookupZip);
-            p2.addEventListener('blur', lookupZip);
-            // Enter/自動補完対策: どちらかで入力が終わったら実行
-            p1.addEventListener('input', ()=>{ if(p1.value.length===3 && p2.value.length>=4) lookupZip(); });
-            p2.addEventListener('input', ()=>{ if(p2.value.length===4 && p1.value.length===3) lookupZip(); });
-        })();
-        </script>
-    
+      <div class="actions">
+        <input type="submit" class="button" value="次へ">
+      </div>
+    </form>
+  </div>
 </body>
 </html>
