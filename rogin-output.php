@@ -1,96 +1,88 @@
 <?php
-// ログイン処理（DB 認証）
-session_start();
-require_once 'db-connect.php';
-?>
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ログイン結果</title>
-</head>
-<body>
-    <?php include 'header.php'; ?>
-    <div class="content">
-<?php
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = isset($_POST['email']) ? trim($_POST['email']) : '';
-    $password = isset($_POST['password']) ? $_POST['password'] : '';
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
-    $errors = [];
-    if ($email === '' || $password === '') {
-        $errors[] = 'メールアドレスとパスワードを入力してください。';
-    }
-    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'メールアドレスの形式が正しくありません。';
-    }
-
-    if (!empty($errors)) {
-        echo "<h2>ログインに失敗しました</h2>";
-        echo "<ul style='color:#c00;'>";
-        foreach ($errors as $err) echo '<li>' . htmlspecialchars($err, ENT_QUOTES, 'UTF-8') . '</li>';
-        echo "</ul>";
-        echo '<p><a href="rogin-input.php">ログイン画面へ戻る</a></p>';
-    } else {
-        // DB からユーザを探す
-        try {
-            $pdo = new PDO($connect, USER, PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-            $sql = 'SELECT * FROM ' . TABLE_MEMBERS . ' WHERE email = :email LIMIT 1';
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([':email' => $email]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($user && isset($user['password']) && password_verify($password, $user['password'])) {
-                // 認証成功
-                $_SESSION['user_email'] = $email;
-                echo "<h2>ログイン成功</h2>";
-                echo "<p>ようこそ: " . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . "</p>";
-                echo '<p><a href="index.php">トップへ</a></p>';
-            } else {
-                echo "<h2>ログイン失敗</h2>";
-                echo "<p>メールアドレスかパスワードが正しくありません。</p>";
-                echo '<p><a href="rogin-input.php">ログイン画面へ戻る</a></p>';
-            }
-
-        } catch (PDOException $e) {
-            // DB エラー時はログを出してデモメッセージ
-            error_log('DB error: ' . $e->getMessage());
-            echo "<h2>ログインエラー</h2>";
-            echo "<p>サーバエラーが発生しました。後ほどお試しください。</p>";
-            echo '<p><a href="rogin-input.php">ログイン画面へ戻る</a></p>';
-        }
-    }
-} else {
-    echo "<h2>不正なアクセス</h2>";
-    echo '<p><a href="rogin-input.php">ログインページへ</a></p>';
+function back_with_error($msg, $redirect = '') {
+  $_SESSION['login_error'] = $msg;
+  $q = $redirect !== '' ? ('?redirect=' . rawurlencode($redirect)) : '';
+  header('Location: rogin-input.php' . $q);
+  exit;
 }
-?>
-    </div>
-  <style>
-    body{
-      margin:0;
-      min-height:100vh;
-      display:flex;
-      flex-direction:column; 
-      background:#fafafa;
-    }
-    .header{
-      display:flex; align-items:center; justify-content:center;
-      gap:12px; margin:20px auto;
-    }
-    .content {
-  text-align: center;
-  margin: auto;             
-  width: min(90%, 720px);
-  border: 1px solid #000;
-  padding: 60px 40px;          
-  border-radius: 8px;
-  background: #fff;
-  box-sizing: border-box;
-  box-shadow: 0 6px 18px rgba(0,0,0,.06);
-  min-height: 300px;           
+
+$email    = trim($_POST['email']    ?? '');
+$password =        $_POST['password'] ?? '';
+$redirect = trim($_POST['redirect'] ?? ''); // 任意: ログイン後に戻す先
+
+if ($email === '' || $password === '') {
+  back_with_error('メールアドレスとパスワードを入力してください。', $redirect);
 }
-  </style>
-</body>
-</html>
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+  back_with_error('メールアドレスの形式が正しくありません。', $redirect);
+}
+
+/** 1) まず DB 認証を試みる（db-connect.php がある場合） **/
+$didDbAuth = false;
+try {
+  // db-connect.php 例：
+  //   $connect = 'mysql:host=...;dbname=...;charset=utf8mb4';
+  //   define('USER','xxx'); define('PASS','yyy');
+  //   define('TABLE_MEMBERS','customer'); など
+  @include_once 'db-connect.php';
+
+  if (isset($connect) && defined('USER') && defined('PASS')) {
+    $pdo = new PDO($connect, USER, PASS, [
+      PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+      PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
+
+    // テーブル名は db-connect.php 側の定数があれば使う。無ければ customer をデフォルトに
+    $table = defined('TABLE_MEMBERS') ? TABLE_MEMBERS : 'customer';
+
+    // email 一意想定
+    $stmt = $pdo->prepare("SELECT * FROM {$table} WHERE email = :email LIMIT 1");
+    $stmt->execute([':email' => $email]);
+    $user = $stmt->fetch();
+
+    if ($user && isset($user['password']) && password_verify($password, $user['password'])) {
+      // ✅ 認証成功：セッションキーを header.php の仕様に合わせる
+      $_SESSION['customer'] = [
+        'id'        => $user['id']       ?? null,
+        'email'     => $user['email']    ?? $email,
+        'username'  => $user['username'] ?? ($user['name'] ?? 'ユーザー'),
+        'name_sei'  => $user['name_sei'] ?? null,
+        'name_mei'  => $user['name_mei'] ?? null,
+      ];
+      $didDbAuth = true;
+    }
+  }
+} catch (Throwable $e) {
+  // DBエラーはログに出すだけ。下のデモ認証にフォールバック。
+  error_log('Login DB error: ' . $e->getMessage());
+}
+
+if ($didDbAuth) {
+  // ログイン後の遷移先（指定があればそちらへ、無ければマイページ）
+  $to = $redirect !== '' ? $redirect : 'mypage.php';
+  header('Location: ' . $to);
+  exit;
+}
+
+/** 2) ここに来たら DB 認証は未設定 or 失敗 → デモ認証を実行 **/
+$DEMO_USER = [
+  'email'    => 'test@example.com',
+  'password' => '1234',
+  'username' => 'テストユーザー',
+];
+
+if ($email === $DEMO_USER['email'] && $password === $DEMO_USER['password']) {
+  $_SESSION['customer'] = [
+    'email'    => $DEMO_USER['email'],
+    'username' => $DEMO_USER['username'],
+  ];
+  $to = $redirect !== '' ? $redirect : 'mypage.php';
+  header('Location: ' . $to);
+  exit;
+}
+
+// どちらも失敗
+back_with_error('メールアドレスまたはパスワードが正しくありません。', $redirect);
+
