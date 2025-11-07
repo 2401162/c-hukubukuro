@@ -1,8 +1,17 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 require 'header.php';
-require 'menu.php';
 require 'db-connect.php';
+try {
+    $pdo = new PDO(
+        $connect,
+        USER,
+        PASS,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+} catch (PDOException $e) {
+    exit('DB接続エラー: ' . $e->getMessage());
+}
 
 $sort = $_GET['sort'] ?? 'all';
 $allowed = ['all','recommend','ranking'];
