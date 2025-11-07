@@ -1,227 +1,149 @@
+<?php
+// customer-input.php : 入力内容確認ページ
+// フロー: customer-newinput.php (POST) → 本ページ(確認) → customer_done.php
+
+// --- サーバーサイド必須チェック & 形式チェック ---
+$required = ["name_sei","name_mei","username","email","password","tel","postal_code1","postal_code2","prefecture","city","address"];
+$errors   = [];
+$P        = [];
+
+// POST前提。直接アクセスなら入力へ戻す
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+  header('Location: customer-newinput.php');
+  exit;
+}
+
+// 値の取り出し（トリム）
+foreach ($required as $k) { $P[$k] = trim($_POST[$k] ?? ""); }
+
+// 形式チェック
+if ($P['postal_code1'] !== '' && !preg_match('/^\d{3}$/', $P['postal_code1'])) $errors[] = "郵便番号（前半）は3桁の数字で入力してください。";
+if ($P['postal_code2'] !== '' && !preg_match('/^\d{4}$/', $P['postal_code2'])) $errors[] = "郵便番号（後半）は4桁の数字で入力してください。";
+if ($P['tel'] !== '' && !preg_match('/^\d{10,11}$/', str_replace('-', '', $P['tel']))) $errors[] = "電話番号は10～11桁の数字で入力してください（ハイフン可）。";
+if ($P['email'] !== '' && !filter_var($P['email'], FILTER_VALIDATE_EMAIL)) $errors[] = "メールアドレスの形式が正しくありません。";
+
+// 空チェック
+function labelOf($name){
+  return [
+    "name_sei"=>"姓","name_mei"=>"名","username"=>"ユーザー名","email"=>"メールアドレス",
+    "password"=>"パスワード","tel"=>"電話番号","postal_code1"=>"郵便番号（前半）","postal_code2"=>"郵便番号（後半）",
+    "prefecture"=>"都道府県","city"=>"市区町村","address"=>"番地","building"=>"建物名"
+  ][$name] ?? $name;
+}
+foreach ($required as $k) {
+  if ($P[$k] === '') $errors[] = labelOf($k) . "が入力されていません。";
+}
+
+// エラー表示（ここでは htmlspecialchars を直書きして h() の重複定義を避ける）
+if ($errors) {
+  echo '<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>入力エラー</title></head><body>';
+  include 'header.php';
+  echo '<div style="max-width:640px;margin:24px auto;padding:16px;border:1px solid #f2b8b5;background:#fff5f5;border-radius:6px;">';
+  echo '<h2 style="color:#a40000;margin:0 0 8px;">入力に不備があります</h2><ul style="margin:8px 0 0 20px;color:#a40000;">';
+  foreach ($errors as $e) echo '<li>'.htmlspecialchars($e, ENT_QUOTES, 'UTF-8').'</li>';
+  echo '</ul>';
+  echo '<form method="post" action="customer-newinput.php" style="margin-top:16px;">';
+  foreach ($_POST as $k=>$v) {
+    if (is_array($v)) continue;
+    echo '<input type="hidden" name="'.htmlspecialchars($k, ENT_QUOTES, 'UTF-8').'" value="'.htmlspecialchars($v, ENT_QUOTES, 'UTF-8').'">';
+  }
+  echo '<button type="submit" style="padding:10px 16px;border:none;border-radius:6px;background:#333;color:#fff;cursor:pointer;">入力画面に戻る</button>';
+  echo '</form></div></body></html>';
+  exit;
+}
+
+// --- ここから確認表示用の整形 ---
+function h($v){ return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+
+$fields = [
+  'name_sei'   => $P['name_sei'],
+  'name_mei'   => $P['name_mei'],
+  'username'   => $P['username'],
+  'email'      => $P['email'],
+  'password'   => $P['password'],
+  'tel'        => $P['tel'],
+  'zip'        => $P['postal_code1'].$P['postal_code2'],
+  'prefecture' => $P['prefecture'],
+  'city'       => $P['city'],
+  'address'    => $P['address'],
+  'building'   => $P['building'],
+];
+$masked_pw = $fields['password'] !== '' ? str_repeat('●', max(6, mb_strlen($fields['password']))) : '';
+?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>会員登録</title>
+  <title>会員登録 - 入力内容確認</title>
   <style>
-    /* 画面中央に細身カードを配置 */
-    body{
-      margin:0;
-      min-height:100vh;
-      display:flex;
-      flex-direction:column;
-      background:#fff;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif;
-    }
-    .content{
-      margin: 24px auto 40px;
-      width: 320px;                 /* 画像の細さに合わせる */
-    }
-
-    .title{
-      font-size: 18px;
-      font-weight: 700;
-      margin: 8px 0 18px;
-      color:#222;
-      text-align:left;
-    }
-
-    /* ラベルは上・入力は全幅 */
-    .form-group{
-      margin: 12px 0;
-    }
-    .form-group label{
-      display:block;
-      font-size: 12px;
-      color:#444;
-      margin-bottom:6px;
-    }
-    input[type="text"],
-    input[type="email"],
-    input[type="password"],
-    input[type="tel"],
-    select{
-      width:100%;
-      height:34px;
-      box-sizing:border-box;
-      border:1px solid #D9D9D9;
-      border-radius:2px;
-      padding: 6px 8px;
-      font-size:14px;
-      outline:none;
-    }
-    input::placeholder{ color:#aaa; }
-
-    /* 横並び行（姓/名・郵便番号など） */
-    .row{
-      display:flex;
-      gap:10px;
-      align-items:flex-end;
-    }
-    .row .col{ flex:1; }
-    .row .col-narrow{ width:86px; flex:0 0 86px; }      /* 郵便番号の小さめ枠 */
-    .row .dash{
-      align-self:center;
-      color:#666;
-      font-size:14px;
-      margin:0 2px 6px;
-    }
-    /* 都道府県は選択肢の見た目を画像寄りに小さめで */
-    .pref-wrap{
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-    .pref-wrap select{
-      width: 140px;                  /* 画像の幅感 */
-      height:34px;
-    }
-
-    /* 下部リンク */
-    .notes{
-      margin-top: 6px;
-      font-size:12px;
-      color:#666;
-    }
-
-    /* 送信ボタン（小さめ赤・中央） */
-    .actions{
-      display:flex;
-      justify-content:center;
-      margin-top:18px;
-    }
-    .button{
-      background:#E43131;            /* 赤 */
-      color:#fff;
-      border:none;
-      border-radius:4px;
-      padding: 8px 18px;
-      font-size:14px;
-      cursor:pointer;
-    }
-    .button:hover{ opacity:.9; }
-
-    /* 画像っぽい細い下線の行（市区町村・番地に雰囲気を寄せたいとき） */
-    .underline input{
-      border: none;
-      border-bottom: 1px solid #D9D9D9;
-      border-radius: 0;
-      height: 28px;
-      padding-left: 0;
-    }
-
-    /* ちょいスマホ時も同じ幅感で */
-    @media (max-width: 360px){
-      .content{ width: 92vw; }
-      .pref-wrap select{ width: 44vw; }
-    }
+    html,body{ height:100%; }
+    body{ margin:0; background:#fff; color:#111; font-family:"Noto Sans JP",system-ui,Meiryo,sans-serif; }
+    .page{ max-width:900px; margin:0 auto; padding:0 16px 48px; }
+    .title{ font-size:24px; font-weight:700; margin:24px 0 8px; }
+    .sub{ font-size:16px; margin:18px 0 14px; }
+    .card{ width:100%; max-width:640px; margin:0 auto; background:#fff; border-radius:8px; box-shadow:0 0 0 1px #e5e5e5; padding:24px 24px 16px; }
+    .rows{ display:grid; grid-template-columns:160px 1fr; row-gap:14px; column-gap:12px; align-items:center; }
+    .label{ font-size:14px; color:#333; }
+    .value{ font-size:14px; color:#111; word-break:break-word; }
+    .name-grid{ display:grid; grid-template-columns:80px 1fr 80px 1fr; column-gap:12px; row-gap:6px; align-items:center; }
+    .actions{ display:flex; justify-content:center; gap:18px; margin:26px 0 0; flex-wrap:wrap; }
+    .btn{ min-width:140px; height:40px; border-radius:6px; border:none; cursor:pointer; font-size:14px; font-weight:700; }
+    .btn-back{ background:#333; color:#fff; }
+    .btn-submit{ background:#e50012; color:#fff; }
+    @media (max-width:480px){ .rows{ grid-template-columns:120px 1fr; } .name-grid{ grid-template-columns:64px 1fr 64px 1fr; } .card{ padding:18px 16px 12px; } }
   </style>
 </head>
 <body>
   <?php include 'header.php'; ?>
 
-  <div class="content">
-    <div class="title">会員登録</div>
+  <div class="page">
+    <h1 class="title">会員登録</h1>
+    <div class="card">
+      <h2 class="sub">入力内容確認</h2>
 
-    <?php
-      // 戻り値の保持
-      $prev_name_sei     = isset($_POST['name_sei'])      ? htmlspecialchars($_POST['name_sei'], ENT_QUOTES, 'UTF-8') : '';
-      $prev_name_mei     = isset($_POST['name_mei'])      ? htmlspecialchars($_POST['name_mei'], ENT_QUOTES, 'UTF-8') : '';
-      $prev_email        = isset($_POST['email'])         ? htmlspecialchars($_POST['email'], ENT_QUOTES, 'UTF-8') : '';
-      $prev_password     = isset($_POST['password'])      ? htmlspecialchars($_POST['password'], ENT_QUOTES, 'UTF-8') : '';
-      $prev_tel          = isset($_POST['tel'])           ? htmlspecialchars($_POST['tel'], ENT_QUOTES, 'UTF-8') : '';
-      $prev_postal_code1 = isset($_POST['postal_code1'])  ? htmlspecialchars($_POST['postal_code1'], ENT_QUOTES, 'UTF-8') : '';
-      $prev_postal_code2 = isset($_POST['postal_code2'])  ? htmlspecialchars($_POST['postal_code2'], ENT_QUOTES, 'UTF-8') : '';
-      $prev_prefecture   = isset($_POST['prefecture'])    ? htmlspecialchars($_POST['prefecture'], ENT_QUOTES, 'UTF-8') : '';
-      $prev_city         = isset($_POST['city'])          ? htmlspecialchars($_POST['city'], ENT_QUOTES, 'UTF-8') : '';
-      $prev_address      = isset($_POST['address'])       ? htmlspecialchars($_POST['address'], ENT_QUOTES, 'UTF-8') : '';
-      $prev_building     = isset($_POST['building'])      ? htmlspecialchars($_POST['building'], ENT_QUOTES, 'UTF-8') : '';
-    ?>
-
-    <form method="post" action="customer-newinput.php" novalidate>
-      <!-- 姓・名（横並び） -->
-      <div class="row form-group">
-        <div class="col">
-          <label>姓</label>
-          <input type="text" name="name_sei" maxlength="255" value="<?php echo $prev_name_sei; ?>">
-        </div>
-        <div class="col">
-          <label>名</label>
-          <input type="text" name="name_mei" maxlength="255" value="<?php echo $prev_name_mei; ?>">
-        </div>
+      <div class="name-grid" style="margin-bottom:14px;">
+        <div class="label">姓</div><div class="value"><?= h($fields['name_sei']) ?></div>
+        <div class="label">名</div><div class="value"><?= h($fields['name_mei']) ?></div>
       </div>
 
-      <div class="form-group">
-        <label>ユーザー名</label>
-        <input type="text" name="username" maxlength="255" placeholder="" />
-      </div>
-
-      <div class="form-group">
-        <label>メールアドレス</label>
-        <input type="email" name="email" maxlength="255" value="<?php echo $prev_email; ?>">
-      </div>
-
-      <div class="form-group">
-        <label>パスワード</label>
-        <input type="password" name="password" maxlength="255" value="<?php echo $prev_password; ?>">
-      </div>
-
-      <div class="form-group">
-        <label>電話番号</label>
-        <input type="tel" name="tel" maxlength="15" value="<?php echo $prev_tel; ?>">
-      </div>
-
-      <!-- 郵便番号（横並び） -->
-      <div class="form-group">
-        <label>郵便番号</label>
-        <div class="row">
-          <div class="col-narrow">
-            <input type="text" name="postal_code1" maxlength="3" value="<?php echo $prev_postal_code1; ?>">
-          </div>
-          <div class="dash">－</div>
-          <div class="col-narrow">
-            <input type="text" name="postal_code2" maxlength="4" value="<?php echo $prev_postal_code2; ?>">
-          </div>
-        </div>
-      </div>
-
-      <!-- 都道府県（小さめ） -->
-      <div class="form-group">
-        <label>都道府県</label>
-        <div class="pref-wrap">
-          <select name="prefecture" id="prefecture">
-            <option value="">選択してください</option>
-            <?php
-              $prefs = ['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県','茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県','新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県','鳥取県','島根県','岡山県','広島県','山口県','徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'];
-              foreach($prefs as $p){
-                $sel = ($prev_prefecture===$p)?' selected':'';
-                echo "<option value=\"$p\"$sel>$p</option>";
-              }
-            ?>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group underline">
-        <label>市区町村</label>
-        <input type="text" name="city" maxlength="255" value="<?php echo $prev_city; ?>">
-      </div>
-
-      <div class="form-group underline">
-        <label>番地</label>
-        <input type="text" name="address" maxlength="255" placeholder="00-00" value="<?php echo $prev_address; ?>">
-      </div>
-
-      <div class="form-group">
-        <label>建物名（アパート、マンションなど）</label>
-        <input type="text" name="building" maxlength="255" value="<?php echo $prev_building; ?>">
+      <div class="rows">
+        <div class="label">ユーザー名</div><div class="value"><?= h($fields['username']) ?></div>
+        <div class="label">メールアドレス</div><div class="value"><?= h($fields['email']) ?></div>
+        <div class="label">パスワード</div><div class="value"><?= $masked_pw ?></div>
+        <div class="label">電話番号</div><div class="value"><?= h($fields['tel']) ?></div>
+        <div class="label">郵便番号</div><div class="value"><?= h($fields['zip']) ?></div>
+        <div class="label">都道府県</div><div class="value"><?= h($fields['prefecture']) ?></div>
+        <div class="label">市区町村</div><div class="value"><?= h($fields['city']) ?></div>
+        <div class="label">番地</div><div class="value"><?= h($fields['address']) ?></div>
+        <div class="label">建物名（アパート、マンションなど）</div><div class="value"><?= h($fields['building']) ?></div>
       </div>
 
       <div class="actions">
-        <input type="submit" class="button" value="次へ">
+        <!-- 戻る：入力へ値を戻す -->
+        <form action="customer-newinput.php" method="post">
+          <?php foreach($fields as $k=>$v): ?>
+            <input type="hidden" name="<?= h($k) ?>" value="<?= h($v) ?>">
+          <?php endforeach; ?>
+          <!-- 郵便番号は newinput 側で前後に分かれるので分割して渡す -->
+          <input type="hidden" name="postal_code1" value="<?= h(substr($fields['zip'],0,3)) ?>">
+          <input type="hidden" name="postal_code2" value="<?= h(substr($fields['zip'],3)) ?>">
+          <button type="submit" class="btn btn-back">戻る</button>
+        </form>
+
+        <!-- 登録：完了へ（POST） -->
+        <form action="customer_done.php" method="post">
+          <?php foreach($fields as $k=>$v): ?>
+            <input type="hidden" name="<?= h($k) ?>" value="<?= h($v) ?>">
+          <?php endforeach; ?>
+          <!-- 完了側は zip を使わず都道府県/市区町村/番地を参照するため、そのままOK -->
+          <button type="submit" class="btn btn-submit">登録</button>
+        </form>
       </div>
-    </form>
+    </div>
   </div>
 </body>
 </html>
+
+
+
