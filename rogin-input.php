@@ -20,7 +20,7 @@
                 </div>
         </p> 
         <div class="password-reset">
-        <p><a href="rogin-mail-input.php">パスワードを忘れた方はこちら</a></p>
+        <p><a href="password-reset-mail-input.php">パスワードを忘れた方はこちら</a></p>
         <p><a href="customer-newinput.php">新規会員登録はこちら</a></p>
         </div>
     </div>
