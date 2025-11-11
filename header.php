@@ -101,8 +101,13 @@ $myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
 <header class="site-header">
   <!-- 左：ロゴ -->
   <div class="brand">
-    <a href="/index.php" aria-label="ホームへ">
-      <img src="/images/ChatGPT%20Image%202025年11月5日%2011_38_53.png" alt="サイトロゴ" class="site-logo">
+    <a href="index.php" aria-label="ホームへ">
+      <?php
+        // 相対パスで画像を指定（ホスティングがサブディレクトリでも動くように）
+        $logoFile = 'ChatGPT Image 2025年11月5日 11_38_53.png';
+        $logoPath = 'images/' . rawurlencode($logoFile);
+      ?>
+      <img src="<?= htmlspecialchars($logoPath, ENT_QUOTES, 'UTF-8') ?>" alt="サイトロゴ" class="site-logo">
     </a>
     <span class="site-title">福袋販売サイト</span>
   </div>
