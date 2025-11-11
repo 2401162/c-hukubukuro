@@ -66,21 +66,8 @@ try {
     $products = [];
 }
 
-// データベースから取得できない場合のダミーデータ
-if (empty($products)) {
-    for ($i=1; $i<=55; $i++) {
-        $products[] = [
-            'id' => $i,
-            'name' => "福袋 {$i}",
-            'price' => 1000 + ($i%9)*500,
-            'image' => 'images/sample'.(1+($i%3)).'.jpg',
-            'reco'  => ($i % 3 === 0) ? 1 : 0,
-            'total_sold' => rand(10, 300),
-            'avg_rating' => rand(1, 50) / 10,
-            'review_count' => rand(0, 20)
-        ];
-    }
-}
+// NOTE: ダミーデータは表示しない。実際に登録されている商品のみ表示する。
+// products が空の場合はページ上で「商品がありません」と表示する。
 
 ?>
 <style>
@@ -149,6 +136,15 @@ const PRODUCTS = <?=
 
 function renderPage(page=1){
   const total = PRODUCTS.length;
+  // 商品が0件ならメッセージ表示してページャを消す
+  if (total === 0) {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '<p class="notice">現在、商品は登録されていません。</p>';
+    document.getElementById('countText').textContent = '0件';
+    document.getElementById('pager').innerHTML = '';
+    document.getElementById('pagerBottom').innerHTML = '';
+    return;
+  }
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   if(page<1) page=1;
   if(page>pages) page=pages;
