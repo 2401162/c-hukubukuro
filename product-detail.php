@@ -23,15 +23,16 @@ if ($product_id <= 0) {
         );
         
         // product テーブル: product_id (PK), jenre_id, name, price, stock, description, is_active
-        $stmt = $pdo->prepare(
-            "SELECT p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name,
-                    COUNT(r.review_id) AS review_count, ROUND(AVG(r.rating), 1) AS avg_rating
-             FROM product p
-             LEFT JOIN genre g ON p.jenre_id = g.genre_id
-             LEFT JOIN review r ON r.is_active = 1
-             WHERE p.product_id = :product_id AND p.is_active = 1
-             GROUP BY p.product_id"
-        );
+    $stmt = $pdo->prepare(
+        "SELECT p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name,
+            COUNT(r.review_id) AS review_count, ROUND(AVG(r.rating), 1) AS avg_rating
+         FROM product p
+         LEFT JOIN genre g ON p.jenre_id = g.genre_id
+         LEFT JOIN order_item oi ON oi.product_id = p.product_id
+         LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1
+         WHERE p.product_id = :product_id AND p.is_active = 1
+         GROUP BY p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name"
+    );
         $stmt->execute([':product_id' => $product_id]);
         $product = $stmt->fetch();
         
