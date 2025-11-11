@@ -39,8 +39,25 @@ foreach ($tables as $table) {
 		);
 		$colsStmt->execute([':schema' => DBNAME, ':table' => $table]);
 		$cols = $colsStmt->fetchAll();
-
-		$result[$table] = $cols;
+				header('Content-Type: application/json; charset=utf-8');
+				// JSON 出力: 追加情報としてテーブル件数やサンプル行を含められる
+				$output = ['schema' => DBNAME, 'tables' => []];
+				foreach ($result as $tname => $cols) {
+					$output['tables'][$tname] = ['columns' => $cols];
+				}
+				// オプション: ?table=table_name を指定するとそのテーブルのデータを含める
+				if (isset($_GET['table']) && is_string($_GET['table']) && array_key_exists($_GET['table'], $result)) {
+					$showTable = $_GET['table'];
+					$limit = isset($_GET['limit']) ? min(1000, max(1, (int)$_GET['limit'])) : 100;
+					try {
+						$rows = $pdo->query("SELECT * FROM `" . str_replace("`", "", $showTable) . "` LIMIT " . $limit)->fetchAll(PDO::FETCH_ASSOC);
+						$output['tables'][$showTable]['rows'] = $rows;
+						$output['tables'][$showTable]['row_limit'] = $limit;
+					} catch (PDOException $e) {
+						$output['tables'][$showTable]['rows_error'] = $e->getMessage();
+					}
+				}
+				echo json_encode($output, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 }
 
 if ($format === 'json') {
@@ -71,12 +88,51 @@ if ($format === 'json') {
 	<h1>DB 接続テスト — テーブル / カラム一覧</h1>
 	<p class="small">スキーマ: <?php echo htmlspecialchars(DBNAME, ENT_QUOTES, 'UTF-8'); ?> — テーブル数: <?php echo count($tables); ?> | <a href="?format=json">JSON 出力</a></p>
 
+	<?php
+	// テーブルごとの件数を取得（負荷が高い場合は無効化可能）
+	$tableCounts = [];
+	try {
+		foreach ($tables as $t) {
+			$cstmt = $pdo->prepare("SELECT COUNT(*) AS cnt FROM `" . str_replace('`', '', $t) . "`");
+			$cstmt->execute();
+			$r = $cstmt->fetch(PDO::FETCH_ASSOC);
+			$tableCounts[$t] = isset($r['cnt']) ? (int)$r['cnt'] : 0;
+		}
+	} catch (PDOException $e) {
+		// 件数取得でエラーが出ても一覧表示は続ける
+		error_log('Count error: ' . $e->getMessage());
+	}
+
+	// 表示するテーブル（オプション）と取得行数の処理
+	$showTable = isset($_GET['table']) ? (string)$_GET['table'] : '';
+	$showLimit = isset($_GET['limit']) ? min(1000, max(1, (int)$_GET['limit'])) : 100;
+	$showRows = [];
+	$showError = '';
+	if ($showTable !== '') {
+		// 安全確認: テーブル名はスキーマの一覧にあることを確認
+		if (!array_key_exists($showTable, $result) || !preg_match('/^[A-Za-z0-9_]+$/', $showTable)) {
+			$showError = '無効なテーブル名が指定されています。';
+		} else {
+			try {
+				$safeTable = str_replace('`','',$showTable);
+				$q = "SELECT * FROM `" . $safeTable . "` LIMIT " . $showLimit;
+				$rowsStmt = $pdo->query($q);
+				$showRows = $rowsStmt->fetchAll(PDO::FETCH_ASSOC);
+			} catch (PDOException $e) {
+				$showError = 'テーブルの読み取り中にエラーが発生しました: ' . $e->getMessage();
+			}
+		}
+	}
+	?>
 	<?php if (empty($tables)): ?>
 		<p>テーブルが見つかりませんでした。</p>
 	<?php endif; ?>
 
 	<?php foreach ($result as $tableName => $columns): ?>
-		<div class="table-name"><strong>テーブル:</strong> <?php echo htmlspecialchars($tableName, ENT_QUOTES, 'UTF-8'); ?></div>
+		<div class="table-name"><strong>テーブル:</strong> <?php echo htmlspecialchars($tableName, ENT_QUOTES, 'UTF-8'); ?>
+			<span class="small"> — 件数: <?php echo isset($tableCounts[$tableName]) ? number_format($tableCounts[$tableName]) : 'N/A'; ?></span>
+			<span class="small"> — <a href="?table=<?php echo urlencode($tableName); ?>&limit=100">表示(100行)</a></span>
+		</div>
 		<table>
 			<thead>
 				<tr>
@@ -104,6 +160,37 @@ if ($format === 'json') {
 			</tbody>
 		</table>
 	<?php endforeach; ?>
+
+	<?php if ($showTable !== ''): ?>
+		<hr>
+		<h2>テーブル: <?php echo htmlspecialchars($showTable, ENT_QUOTES, 'UTF-8'); ?> の内容 (最大 <?php echo htmlspecialchars((string)$showLimit, ENT_QUOTES, 'UTF-8'); ?> 行)</h2>
+		<?php if ($showError): ?>
+			<div class="small" style="color:#a33"><?php echo htmlspecialchars($showError, ENT_QUOTES, 'UTF-8'); ?></div>
+		<?php else: ?>
+			<?php if (empty($showRows)): ?>
+				<p class="small">表示する行がありません（または結果が空です）。</p>
+			<?php else: ?>
+				<table>
+					<thead>
+						<tr>
+							<?php foreach (array_keys($showRows[0]) as $col): ?>
+								<th><?php echo htmlspecialchars($col, ENT_QUOTES, 'UTF-8'); ?></th>
+							<?php endforeach; ?>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ($showRows as $r): ?>
+							<tr>
+								<?php foreach ($r as $v): ?>
+									<td><?php echo htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); ?></td>
+								<?php endforeach; ?>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		<?php endif; ?>
+	<?php endif; ?>
 
 </body>
 </html>
