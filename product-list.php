@@ -9,6 +9,7 @@ if (!in_array($sort, $allowed, true)) { $sort = 'all'; }
 
 /* ==== データベースから商品データ取得 ==== */
 $products = [];
+$dbError = '';
 try {
     $pdo = new PDO(
         $connect,
@@ -22,23 +23,25 @@ try {
     
     // product テーブル: product_id (PK), jenre_id, name, price, stock, description, is_active
     // review テーブル: review_id (PK), order_item_id, rating, comment, is_active, created_at, updated_at
-    $query = "
-        SELECT 
-            p.product_id AS id,
-            p.name,
-            p.price,
-            p.description,
-            p.stock,
-            COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg_rating,
-            COUNT(r.review_id) AS review_count,
-            SUM(CASE WHEN oi.product_id IS NOT NULL THEN oi.quantity ELSE 0 END) AS total_sold,
-            CASE WHEN p.product_id IN (SELECT product_id FROM product WHERE is_active = 1 LIMIT 5) THEN 1 ELSE 0 END AS reco
-        FROM product p
-        LEFT JOIN review r ON r.is_active = 1
-        LEFT JOIN order_item oi ON oi.product_id = p.product_id
-        WHERE p.is_active = 1
-        GROUP BY p.product_id, p.name, p.price
-    ";
+  // 修正: review は order_item を経由して product に紐付くため、
+  // order_item を先に結合し、そこから review を結合する。
+  $query = "
+    SELECT 
+      p.product_id AS id,
+      p.name,
+      p.price,
+      p.description,
+      p.stock,
+      COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg_rating,
+      COUNT(r.review_id) AS review_count,
+      COALESCE(SUM(oi.quantity), 0) AS total_sold,
+      CASE WHEN p.product_id IN (SELECT product_id FROM product WHERE is_active = 1 LIMIT 5) THEN 1 ELSE 0 END AS reco
+    FROM product p
+    LEFT JOIN order_item oi ON oi.product_id = p.product_id
+    LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1
+    WHERE p.is_active = 1
+    GROUP BY p.product_id, p.name, p.price, p.description, p.stock
+  ";
     
     if ($sort === 'recommend') {
         $query .= " ORDER BY reco DESC, avg_rating DESC, total_sold DESC, p.product_id DESC";
@@ -61,9 +64,10 @@ try {
     unset($p);
     
 } catch (PDOException $e) {
-    // DB接続エラー時は空配列にしてダミーデータで補完
-    error_log("Product DB Error: " . $e->getMessage());
-    $products = [];
+  // DBエラーはログに出しつつ、ページ上に分かりやすく表示する
+  error_log("Product DB Error: " . $e->getMessage());
+  $dbError = 'データベースエラーが発生しました。管理者に問い合わせてください。';
+  $products = [];
 }
 
 // NOTE: ダミーデータは表示しない。実際に登録されている商品のみ表示する。
