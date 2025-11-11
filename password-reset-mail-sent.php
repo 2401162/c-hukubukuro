@@ -1,7 +1,62 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
+require_once 'db-connect.php';
 
-$email = $_POST['email'] ?? '*****';
+$email = trim($_POST['email'] ?? '');
+$message = '';
+$is_success = false;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($email)) {
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $message = 'メールアドレスの形式が正しくありません。';
+    } else {
+        try {
+            $pdo = new PDO(
+                $connect,
+                USER,
+                PASS,
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                ]
+            );
+            
+            // customer テーブルからメールアドレスが存在するか確認
+            $stmt = $pdo->prepare("SELECT customer_id FROM customer WHERE email = :email AND is_active = 1 LIMIT 1");
+            $stmt->execute([':email' => $email]);
+            $user = $stmt->fetch();
+            
+            if ($user) {
+                // トークン生成（SHA256ハッシュ）
+                $token = bin2hex(random_bytes(32));
+                $token_hash = hash('sha256', $token);
+                $expires_at = date('Y-m-d H:i:s', time() + 3600); // 1時間有効
+                
+                // トークンをセッションに保存（本来はDBに保存すべき）
+                $_SESSION['password_reset_token'] = $token_hash;
+                $_SESSION['password_reset_email'] = $email;
+                $_SESSION['password_reset_expires'] = $expires_at;
+                
+                // 本番環境ではメール送信処理を実施
+                // mail($email, 'パスワード再設定', "リンク: http://example.com/password-reset-new.php?token={$token}");
+                
+                $is_success = true;
+                $message = 'ご登録済みのメールアドレスにパスワード再設定用のURLをお送りしました。';
+            } else {
+                // セキュリティ上、メールアドレスが存在しない場合も「送信しました」と返す
+                $is_success = true;
+                $message = 'ご登録済みのメールアドレスにパスワード再設定用のURLをお送りしました。';
+            }
+        } catch (PDOException $e) {
+            error_log("Password Reset DB Error: " . $e->getMessage());
+            $message = 'エラーが発生しました。もう一度お試しください。';
+        }
+    }
+} else {
+    $message = '不正なアクセスです。';
+}
+
+function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -18,8 +73,8 @@ $email = $_POST['email'] ?? '*****';
     <h2>パスワードの再設定</h2>
 
     <p class="note">
-        <?= htmlspecialchars($email) ?> に新しいパスワードを設定するためのURLを送信しました。<br>
-        ご確認の上、新しいパスワードに変更してください。
+        <?= h($message) ?><br>
+        <a href="rogin-input.php" style="margin-top: 16px; display: inline-block; color: #e43131; text-decoration: none; font-weight: 600;">ログイン画面に戻る</a>
     </p>
 
 </div>
@@ -36,6 +91,10 @@ body { margin:0; min-height:100vh; display:flex; flex-direction:column; }
     text-align:center;
 }
 .note { line-height:1.8; color:#444; }
+a { color: #e43131; }
+@media (max-width: 640px) {
+    .content { width: 90%; padding: 30px 20px; }
+}
 </style>
 
 </body>
