@@ -73,7 +73,9 @@ try {
 // フォールバック: 上の集計クエリで何らかの理由で結果が空になっている場合は
 // 単純な product テーブルのみの取得を試みる（JOIN を外して商品が存在するか確認）
 $usedFallback = false;
-if (empty($products) && $dbError === '') {
+// NOTE: 集計クエリで例外が出た場合でも、商品自体は表示したいため
+// dbError の有無に関わらず products が空ならフォールバックを試みる
+if (empty($products)) {
   try {
     $fbStmt = $pdo->prepare(
       "SELECT product_id AS id, name, price, description, stock, 0 AS avg_rating, 0 AS review_count, 0 AS total_sold, 0 AS reco
