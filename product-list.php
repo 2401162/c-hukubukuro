@@ -70,6 +70,33 @@ try {
   $products = [];
 }
 
+// フォールバック: 上の集計クエリで何らかの理由で結果が空になっている場合は
+// 単純な product テーブルのみの取得を試みる（JOIN を外して商品が存在するか確認）
+$usedFallback = false;
+if (empty($products) && $dbError === '') {
+  try {
+    $fbStmt = $pdo->prepare(
+      "SELECT product_id AS id, name, price, description, stock, 0 AS avg_rating, 0 AS review_count, 0 AS total_sold, 0 AS reco
+       FROM product
+       WHERE is_active = 1
+       ORDER BY product_id DESC"
+    );
+    $fbStmt->execute();
+    $fb = $fbStmt->fetchAll();
+    if (!empty($fb)) {
+      $products = $fb;
+      foreach ($products as &$p) {
+        $img_num = (($p['id'] - 1) % 3) + 1;
+        $p['image'] = 'images/sample' . $img_num . '.jpg';
+      }
+      unset($p);
+      $usedFallback = true;
+    }
+  } catch (PDOException $e) {
+    error_log('Product fallback error: ' . $e->getMessage());
+  }
+}
+
 // NOTE: ダミーデータは表示しない。実際に登録されている商品のみ表示する。
 // products が空の場合はページ上で「商品がありません」と表示する。
 
@@ -123,6 +150,12 @@ try {
     </select>
   </div>
 </div>
+
+<?php if (!empty($dbError)): ?>
+  <div class="notice"><?= htmlspecialchars($dbError, ENT_QUOTES, 'UTF-8') ?></div>
+<?php elseif (!empty($usedFallback)): ?>
+  <div class="notice">注意: 集計クエリで結果が取得できなかったため、簡易表示モードで商品を読み込んでいます。レビューや売上の集計値は表示されません。</div>
+<?php endif; ?>
 
 <div class="pager-wrap">
   <div class="help"><span id="countText"></span></div>
