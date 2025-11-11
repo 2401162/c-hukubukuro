@@ -82,6 +82,8 @@ try {
 .sort-tabs{display:flex;gap:14px}
 .sort-tabs a{display:inline-block;padding:8px 14px;border:1px solid #ddd;border-radius:999px;text-decoration:none;font-size:13px;background:#fff}
 .sort-tabs a.active{border-color:#ec4c4c;color:#ec4c4c;font-weight:700}
+/* select をタブ風に見せる */
+.sort-tabs select{appearance:none;-webkit-appearance:none;-moz-appearance:none;padding:8px 14px;border:1px solid #ddd;border-radius:999px;background:#fff;font-size:13px;cursor:pointer}
 .product-wrap{max-width:1200px;margin:0 auto 48px;padding:0 12px}
 .product-grid{display:grid;grid-template-columns:1fr;gap:16px;align-items:stretch}
 @media (min-width:600px){.product-grid{grid-template-columns:repeat(2,1fr)}}
@@ -112,9 +114,13 @@ try {
     <?php if($sort==='ranking'): ?><span class="badge">ランキング順</span><?php endif; ?>
   </div>
   <div class="sort-tabs">
-    <a href="?sort=all"       class="<?= $sort==='all'?'active':'' ?>">新着</a>
-    <a href="?sort=recommend" class="<?= $sort==='recommend'?'active':'' ?>">おすすめ</a>
-    <a href="?sort=ranking"   class="<?= $sort==='ranking'?'active':'' ?>">ランキング</a>
+    <!-- タブ表示からプルダウンに変更（形はそのまま見えるようスタイルを合わせる） -->
+    <label for="sortSelect" style="display:none">並び替え</label>
+    <select id="sortSelect" name="sort" aria-label="並び替え">
+      <option value="all" <?= $sort==='all' ? 'selected' : '' ?>>新着</option>
+      <option value="recommend" <?= $sort==='recommend' ? 'selected' : '' ?>>おすすめ</option>
+      <option value="ranking" <?= $sort==='ranking' ? 'selected' : '' ?>>ランキング</option>
+    </select>
   </div>
 </div>
 
@@ -204,6 +210,21 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','
 function escapeAttr(s){ return escapeHtml(s).replace(/`/g,'&#96;'); }
 
 renderPage(Number(new URL(location.href).searchParams.get('page')) || 1);
+</script>
+
+<script>
+  // プルダウンでソートを変更したときに GET パラメータで再読み込み
+  (function(){
+    const sel = document.getElementById('sortSelect');
+    if (!sel) return;
+    sel.addEventListener('change', function(){
+      const sp = new URLSearchParams(location.search);
+      sp.set('sort', this.value);
+      sp.delete('page'); // ソート変更時はページを先頭に戻す
+      const q = sp.toString();
+      location.search = q ? ('?' + q) : '';
+    });
+  })();
 </script>
 
 <?php
