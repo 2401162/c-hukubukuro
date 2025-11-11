@@ -1,6 +1,15 @@
 <?php
 // セッション開始（未開始なら開始）
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
+// 注意: 他ファイルで既に出力が始まっていると headers が送信済みになり
+// session_start() が警告を出すため、安全に開始できるか確認してから呼ぶ。
+if (session_status() === PHP_SESSION_NONE) {
+  if (!headers_sent()) {
+    session_start();
+  } else {
+    // ヘッダー送信後にセッションを開始できないためログに記録（警告は出さない）
+    error_log('Session not started in header.php: headers already sent');
+  }
+}
 
 // ✅ ログイン判定（あなたのセッションキーに合わせてあります）
 $isLoggedIn = !empty($_SESSION['customer']);
