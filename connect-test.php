@@ -39,25 +39,7 @@ foreach ($tables as $table) {
 		);
 		$colsStmt->execute([':schema' => DBNAME, ':table' => $table]);
 		$cols = $colsStmt->fetchAll();
-				header('Content-Type: application/json; charset=utf-8');
-				// JSON 出力: 追加情報としてテーブル件数やサンプル行を含められる
-				$output = ['schema' => DBNAME, 'tables' => []];
-				foreach ($result as $tname => $cols) {
-					$output['tables'][$tname] = ['columns' => $cols];
-				}
-				// オプション: ?table=table_name を指定するとそのテーブルのデータを含める
-				if (isset($_GET['table']) && is_string($_GET['table']) && array_key_exists($_GET['table'], $result)) {
-					$showTable = $_GET['table'];
-					$limit = isset($_GET['limit']) ? min(1000, max(1, (int)$_GET['limit'])) : 100;
-					try {
-						$rows = $pdo->query("SELECT * FROM `" . str_replace("`", "", $showTable) . "` LIMIT " . $limit)->fetchAll(PDO::FETCH_ASSOC);
-						$output['tables'][$showTable]['rows'] = $rows;
-						$output['tables'][$showTable]['row_limit'] = $limit;
-					} catch (PDOException $e) {
-						$output['tables'][$showTable]['rows_error'] = $e->getMessage();
-					}
-				}
-				echo json_encode($output, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+		$result[$table] = $cols;
 }
 
 if ($format === 'json') {
