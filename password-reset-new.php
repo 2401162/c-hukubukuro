@@ -1,12 +1,36 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
-// トークンチェック（セッションから取得）
-$token_hash = $_SESSION['password_reset_token'] ?? null;
-$reset_email = $_SESSION['password_reset_email'] ?? null;
-$expires_at = $_SESSION['password_reset_expires'] ?? null;
+// トークンチェック（GET パラメータから取得して DB で検証）
+require_once 'db-connect.php';
 
-$is_valid = $token_hash && $reset_email && $expires_at && (time() < strtotime($expires_at));
+$raw_token = $_GET['token'] ?? null;
+$reset_email = null;
+$is_valid = false;
+
+if ($raw_token) {
+    try {
+        $pdo = new PDO(
+            $connect,
+            USER,
+            PASS,
+            [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]
+        );
+        $token_hash = hash('sha256', $raw_token);
+        $stmt = $pdo->prepare("SELECT pr.customer_id, pr.expires_at, c.email FROM password_resets pr LEFT JOIN customer c ON pr.customer_id = c.customer_id WHERE pr.token_hash = :token_hash LIMIT 1");
+        $stmt->execute([':token_hash' => $token_hash]);
+        $row = $stmt->fetch();
+        if ($row && strtotime($row['expires_at']) > time() && $row['email']) {
+            $is_valid = true;
+            $reset_email = $row['email'];
+        }
+    } catch (PDOException $e) {
+        error_log('Password reset token check error: ' . $e->getMessage());
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -30,7 +54,7 @@ $is_valid = $token_hash && $reset_email && $expires_at && (time() < strtotime($e
             <p>新しいパスワード（確認用）</p>
             <input type="password" name="password2" class="text-input" required minlength="8">
 
-            <input type="hidden" name="email" value="<?= htmlspecialchars($reset_email, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="token" value="<?= htmlspecialchars($raw_token, ENT_QUOTES, 'UTF-8') ?>">
 
             <input type="submit" value="完了" class="btn-red">
         </form>
