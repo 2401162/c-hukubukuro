@@ -32,24 +32,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($email)) {
                 $token_hash = hash('sha256', $token);
                 $expires_at = date('Y-m-d H:i:s', time() + 3600); // 1時間有効
                 
-                // トークンをDBに保存
-                $pdo->beginTransaction();
-                // password_resets テーブルがなければ作成
-                $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
-                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                    customer_id BIGINT,
-                    token_hash VARCHAR(255) NOT NULL,
-                    expires_at DATETIME NOT NULL,
-                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                // password_resets テーブルの作成（トランザクション外）
+                try {
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
+                        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                        customer_id BIGINT,
+                        token_hash VARCHAR(255) NOT NULL,
+                        expires_at DATETIME NOT NULL,
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                } catch (PDOException $ce) {
+                    error_log("CREATE TABLE error: " . $ce->getMessage());
+                    // テーブル作成失敗でも続ける（既に存在する可能性）
+                }
 
-                $insert = $pdo->prepare("INSERT INTO password_resets (customer_id, token_hash, expires_at) VALUES (:customer_id, :token_hash, :expires_at)");
-                $insert->execute([
-                    ':customer_id' => $user['customer_id'],
-                    ':token_hash' => $token_hash,
-                    ':expires_at' => $expires_at,
-                ]);
-                $pdo->commit();
+                // トークンをDBに保存（トランザクション内）
+                try {
+                    $pdo->beginTransaction();
+                    $insert = $pdo->prepare("INSERT INTO password_resets (customer_id, token_hash, expires_at) VALUES (:customer_id, :token_hash, :expires_at)");
+                    $insert->execute([
+                        ':customer_id' => $user['customer_id'],
+                        ':token_hash' => $token_hash,
+                        ':expires_at' => $expires_at,
+                    ]);
+                    $pdo->commit();
+                } catch (PDOException $ie) {
+                    $pdo->rollBack();
+                    error_log("INSERT password_resets error: " . $ie->getMessage());
+                    throw $ie;
+                }
 
                 // メール送信 (mail 関数を使用)
                 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -59,13 +70,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($email)) {
 
                 $subject = '【サイト名】パスワード再設定のご案内';
                 $body = "以下のリンクからパスワード再設定ページへアクセスしてください。\n\n" . $link . "\n\n有効期限: 1時間\n\nこのメールに心当たりがない場合は破棄してください。";
-                $from = 'no-reply@' . ($host);
+                $from = 'no-reply@' . $host;
                 $headers = "From: " . $from . "\r\n" .
                            "Reply-To: " . $from . "\r\n" .
                            "Content-Type: text/plain; charset=UTF-8\r\n";
 
-                // @ を付けて失敗しても処理を続ける（ホスティング環境によっては mail が無効）
-                @mail($email, $subject, $body, $headers);
+                // mail 関数を試行（失敗しても続ける）
+                $mail_result = @mail($email, $subject, $body, $headers);
+                error_log("Mail sent to $email: " . ($mail_result ? 'success' : 'failed'));
 
                 $is_success = true;
                 $message = 'ご登録済みのメールアドレスにパスワード再設定用のURLをお送りしました。';
@@ -76,6 +88,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($email)) {
             }
         } catch (PDOException $e) {
             error_log("Password Reset DB Error: " . $e->getMessage());
+            $message = 'エラーが発生しました。もう一度お試しください。';
+        } catch (Exception $e) {
+            error_log("Password Reset General Error: " . $e->getMessage());
             $message = 'エラーが発生しました。もう一度お試しください。';
         }
     }
