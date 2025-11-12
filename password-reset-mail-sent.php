@@ -32,14 +32,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($email)) {
                 $token_hash = hash('sha256', $token);
                 $expires_at = date('Y-m-d H:i:s', time() + 3600); // 1時間有効
                 
-                // トークンをセッションに保存（本来はDBに保存すべき）
-                $_SESSION['password_reset_token'] = $token_hash;
-                $_SESSION['password_reset_email'] = $email;
-                $_SESSION['password_reset_expires'] = $expires_at;
-                
-                // 本番環境ではメール送信処理を実施
-                // mail($email, 'パスワード再設定', "リンク: http://example.com/password-reset-new.php?token={$token}");
-                
+                // トークンをDBに保存
+                $pdo->beginTransaction();
+                // password_resets テーブルがなければ作成
+                $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
+                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    customer_id BIGINT,
+                    token_hash VARCHAR(255) NOT NULL,
+                    expires_at DATETIME NOT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                $insert = $pdo->prepare("INSERT INTO password_resets (customer_id, token_hash, expires_at) VALUES (:customer_id, :token_hash, :expires_at)");
+                $insert->execute([
+                    ':customer_id' => $user['customer_id'],
+                    ':token_hash' => $token_hash,
+                    ':expires_at' => $expires_at,
+                ]);
+                $pdo->commit();
+
+                // メール送信 (mail 関数を使用)
+                $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                $path = rtrim(dirname($_SERVER['REQUEST_URI']), '\\/');
+                $link = $protocol . '://' . $host . $path . '/password-reset-new.php?token=' . rawurlencode($token);
+
+                $subject = '【サイト名】パスワード再設定のご案内';
+                $body = "以下のリンクからパスワード再設定ページへアクセスしてください。\n\n" . $link . "\n\n有効期限: 1時間\n\nこのメールに心当たりがない場合は破棄してください。";
+                $from = 'no-reply@' . ($host);
+                $headers = "From: " . $from . "\r\n" .
+                           "Reply-To: " . $from . "\r\n" .
+                           "Content-Type: text/plain; charset=UTF-8\r\n";
+
+                // @ を付けて失敗しても処理を続ける（ホスティング環境によっては mail が無効）
+                @mail($email, $subject, $body, $headers);
+
                 $is_success = true;
                 $message = 'ご登録済みのメールアドレスにパスワード再設定用のURLをお送りしました。';
             } else {
