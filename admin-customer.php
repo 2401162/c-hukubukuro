@@ -1,5 +1,5 @@
 <?php session_start(); ?>
-<?php require 'db-conect.php'; ?>
+<?php require 'db-connect.php'; ?>
 <?php require 'admin-header.php'; ?>
 <?php require 'admin-menu.php'; ?>
 <h1>顧客管理</h1>
