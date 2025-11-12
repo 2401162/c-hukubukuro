@@ -9,10 +9,10 @@ $is_success = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $password2 = $_POST['password2'] ?? '';
-    $email = trim($_POST['email'] ?? '');
-    
+    $raw_token = $_POST['token'] ?? '';
+
     // バリデーション
-    if (empty($password) || empty($password2) || empty($email)) {
+    if (empty($password) || empty($password2) || empty($raw_token)) {
         $error_message = 'すべてのフィールドを入力してください。';
     } elseif ($password !== $password2) {
         $error_message = 'パスワードが一致しません。';
@@ -29,29 +29,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 ]
             );
-            
-            // customer テーブル: password_hash, updated_at を更新
-            $password_hash = password_hash($password, PASSWORD_BCRYPT);
-            
-            $stmt = $pdo->prepare(
-                "UPDATE customer 
-                 SET password_hash = :password_hash, updated_at = CURRENT_TIMESTAMP 
-                 WHERE email = :email AND is_active = 1"
-            );
-            
-            $stmt->execute([
-                ':password_hash' => $password_hash,
-                ':email' => $email,
-            ]);
-            
-            if ($stmt->rowCount() > 0) {
-                $is_success = true;
-                // セッションをクリア
-                unset($_SESSION['password_reset_token']);
-                unset($_SESSION['password_reset_email']);
-                unset($_SESSION['password_reset_expires']);
+
+            $token_hash = hash('sha256', $raw_token);
+            // トークンが存在するか確認
+            $tstmt = $pdo->prepare("SELECT id, customer_id, expires_at FROM password_resets WHERE token_hash = :token_hash LIMIT 1");
+            $tstmt->execute([':token_hash' => $token_hash]);
+            $trow = $tstmt->fetch();
+
+            if (!$trow) {
+                $error_message = '無効なトークンです。';
+            } elseif (strtotime($trow['expires_at']) < time()) {
+                $error_message = 'トークンの有効期限が切れています。';
             } else {
-                $error_message = 'メールアドレスが見つかりません。';
+                // 更新
+                $password_hash = password_hash($password, PASSWORD_BCRYPT);
+                $ustmt = $pdo->prepare("UPDATE customer SET password_hash = :password_hash, updated_at = CURRENT_TIMESTAMP WHERE customer_id = :customer_id AND is_active = 1");
+                $ustmt->execute([':password_hash' => $password_hash, ':customer_id' => $trow['customer_id']]);
+
+                if ($ustmt->rowCount() > 0) {
+                    // トークンを削除
+                    $dstmt = $pdo->prepare("DELETE FROM password_resets WHERE id = :id");
+                    $dstmt->execute([':id' => $trow['id']]);
+
+                    $is_success = true;
+                } else {
+                    $error_message = 'ユーザーの更新に失敗しました。';
+                }
             }
         } catch (PDOException $e) {
             error_log("Password Reset Complete DB Error: " . $e->getMessage());
