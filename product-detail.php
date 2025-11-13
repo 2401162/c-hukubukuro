@@ -1,6 +1,5 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
-require_once 'header.php';
 require_once 'db-connect.php';
 
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -70,7 +69,9 @@ $image_path = 'images/sample' . $image_num . '.jpg';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $product ? h($product['name']) : '商品詳細' ?></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; }
         .breadcrumb { max-width: 1200px; margin: 8px auto 0; padding: 0 12px; color: #777; font-size: 12px; }
         .container { max-width: 1200px; margin: 24px auto; padding: 0 12px; }
         .detail-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 40px; }
@@ -102,6 +103,7 @@ $image_path = 'images/sample' . $image_num . '.jpg';
     </style>
 </head>
 <body>
+    <?php require 'header.php'; ?>
     <div class="breadcrumb">ホーム &gt; <a href="product-list.php">商品一覧</a> &gt; <?= $product ? h($product['name']) : '商品詳細' ?></div>
 
     <div class="container">
