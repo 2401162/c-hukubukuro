@@ -2,29 +2,28 @@
 require 'admin-db-connect.php';
 header('Content-Type: application/json');
 
-// JSONデータを受け取る
 $input = json_decode(file_get_contents('php://input'), true);
 
-// 必須項目が揃っているかチェック
 if (!$pdo || !$input || !isset($input['name'], $input['jenre_id'], $input['price'], $input['stock'], $input['description'], $input['is_active'])) {
   echo json_encode(['success' => false, 'message' => '不正な入力です']);
   exit;
 }
 
-// SQL実行
-$sql = $pdo->prepare('INSERT INTO product (jenre_id, name, price, stock, description, is_active) VALUES (?, ?, ?, ?, ?, ?)');
+$image_path = isset($input['image_path']) ? $input['image_path'] : null;
+
+$sql = $pdo->prepare('INSERT INTO product (jenre_id, name, price, stock, description, is_active, image_path) VALUES (?, ?, ?, ?, ?, ?, ?)');
 $success = $sql->execute([
   $input['jenre_id'],
   $input['name'],
   $input['price'],
   $input['stock'],
   $input['description'],
-  $input['is_active']
+  $input['is_active'],
+  $image_path
 ]);
 
-// 結果を返す
 if ($success) {
-  $input['product_id'] = $pdo->lastInsertId(); // 新しいIDを取得
+  $input['product_id'] = $pdo->lastInsertId();
   echo json_encode(['success' => true, 'product' => $input]);
 } else {
   echo json_encode(['success' => false, 'message' => 'データベース登録に失敗しました']);
