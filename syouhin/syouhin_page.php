@@ -13,8 +13,8 @@
 <?php
 $pdo = new PDO($connect, USER, PASS);
 
-$stmt = $pdo->prepare('SELECT * FROM product WHERE product_id=? AND jenre_id=?');
-$stmt->execute([$_REQUEST['product_id'], $_REQUEST['jenre_id']]);
+$stmt = $pdo->prepare('SELECT * FROM product WHERE product_id=?');
+$stmt->execute([$_REQUEST['product_id']]);
 $product = $stmt->fetch(PDO::FETCH_ASSOC);
 
 $avgStmt = $pdo->prepare('
@@ -39,7 +39,7 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
 
 if ($product) {
     echo '<div class="product">';
-    echo '<p><img alt="image" src="image/'.$product['product_id'].'_'.$product['jenre_id'].'.png"></p>';
+    echo '<p><img alt="image" src="image/'.$product['product_id'].'.png"></p>';
     echo '<form action="cart.php" method="post">';
     echo '<h3>'.$product['name'].'</h3>';
     echo '<p>￥'.$product['price'].'<small>税込み</small></p>';
