@@ -200,8 +200,9 @@ function renderPage(page=1){
   const grid = document.getElementById('grid');
   grid.innerHTML = slice.map(p => `
     <a class="card" href="product-detail.php?id=${p.id}" aria-label="${escapeHtml(p.name)}の詳細へ">
-      <img class="thumb" src="${escapeAttr(p.image||'images/noimage.png')}"
-           alt="${escapeAttr(p.name)}の画像">
+      <div class="thumb" style="background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;">
+        <span>画像未設定</span>
+      </div>
       <div class="body">
         <div class="name">${escapeHtml(p.name)}</div>
         <div class="caption">売上: ${Number(p.total_sold||0)} 件 / 評価: ${(p.avg_rating ? p.avg_rating + '★ (' + p.review_count + '件)' : '未評価')}</div>
