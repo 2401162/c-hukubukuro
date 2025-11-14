@@ -33,8 +33,25 @@ if ($product_id <= 0) {
          WHERE p.product_id = :product_id AND p.is_active = 1
             GROUP BY p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name, p.image"
     );
-        $stmt->execute([':product_id' => $product_id]);
-        $product = $stmt->fetch();
+        try {
+            $stmt->execute([':product_id' => $product_id]);
+            $product = $stmt->fetch();
+        } catch (PDOException $e) {
+            // image カラムが存在しない可能性があるので、image を外したクエリで再試行
+            if (stripos($e->getMessage(), 'unknown column') !== false || stripos($e->getMessage(), '1054') !== false) {
+                error_log('Product detail query: image column missing, retrying without image');
+                $queryNoImage = str_replace("\n            p.image,", "",
+                    "SELECT p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name,\n            p.image,\n            COUNT(r.review_id) AS review_count, ROUND(AVG(r.rating), 1) AS avg_rating\n         FROM product p\n         LEFT JOIN genre g ON p.jenre_id = g.genre_id\n         LEFT JOIN order_item oi ON oi.product_id = p.product_id\n         LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1\n         WHERE p.product_id = :product_id AND p.is_active = 1\n            GROUP BY p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name, p.image"
+                );
+                // 最後の GROUP BY の p.image 部分を削る
+                $queryNoImage = str_ireplace(', p.image', '', $queryNoImage);
+                $stmt = $pdo->prepare($queryNoImage);
+                $stmt->execute([':product_id' => $product_id]);
+                $product = $stmt->fetch();
+            } else {
+                throw $e;
+            }
+        }
         
         if (!$product) {
             $error_message = '商品が見つかりません。';
