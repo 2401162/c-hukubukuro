@@ -68,7 +68,7 @@ $total = $subtotal + $shipping;
 
 ?>
 
-<?php include __DIR__ . 'admin-header.php'; ?>
+<?php include __DIR__ . '/syouhin/header.php'; ?>
 
 <style>
 .cart-wrapper {
