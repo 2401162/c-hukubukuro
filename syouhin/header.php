@@ -1,5 +1,5 @@
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- Icons: inline SVGs to avoid external CDN/tracking issues -->
 
 <style>
   /* ヘッダー全体 */
@@ -93,12 +93,19 @@
 
     <!-- ✅ マイページ（ログインしてない場合はログインページへ） -->
     <a href="<?= htmlspecialchars($myPageUrl, ENT_QUOTES, 'UTF-8') ?>" aria-label="マイページ">
-      <i class="fa-solid fa-user" aria-hidden="true"></i>
+      <!-- User icon (inline SVG) -->
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="#fff"/>
+        <path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8v1H4v-1z" fill="#fff"/>
+      </svg>
     </a>
 
     <!-- カート -->
     <a href="/cart.php" aria-label="カート">
-      <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+      <!-- Cart icon (inline SVG) -->
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <path d="M7 4h-2l-1 2v2h2l3.6 7.59-1.35 2.45C8.89 18.76 9.5 20 11 20h8v-2h-7.42c-.14 0-.25-.11-.25-.25l.03-.12L12.1 15h5.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49-.02-.02c.07-.14.08-.3.08-.46 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59L6.5 16h12.02" fill="#fff"/>
+      </svg>
 <?php
     $cartCount = $_SESSION['cart_count'] ?? 0;
     if ($cartCount > 0) {
