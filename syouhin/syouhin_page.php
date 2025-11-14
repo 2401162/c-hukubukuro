@@ -39,7 +39,18 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
 
 if ($product) {
     echo '<div class="product">';
-    echo '<p><img alt="image" src="image/'.$product['product_id'].'.png"></p>';
+    // 画像カラムがあれば優先、なければ product_id ベースのファイル名を使う
+    $imgSrc = '';
+    if (!empty($product['image'])) {
+        if (strpos($product['image'], '/') !== false) {
+            $imgSrc = $product['image'];
+        } else {
+            $imgSrc = 'image/' . rawurlencode($product['image']);
+        }
+    } else {
+        $imgSrc = 'image/' . rawurlencode($product['product_id']) . '.png';
+    }
+    echo '<p><img alt="image" src="' . $imgSrc . '"></p>';
     echo '<form action="cart.php" method="post">';
     echo '<h3>'.$product['name'].'</h3>';
     echo '<p>￥'.$product['price'].'<small>税込み</small></p>';
