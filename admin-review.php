@@ -1,3 +1,4 @@
+<?php require 'admin-auth.php'; ?>
 <?php require 'admin-header.php'; ?>
 <?php require 'admin-menu.php'; ?>
 <?php require 'admin-db-connect.php'; ?>

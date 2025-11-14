@@ -24,14 +24,14 @@ if ($product_id <= 0) {
         // product テーブル: product_id (PK), jenre_id, name, price, stock, description, is_active
     $stmt = $pdo->prepare(
         "SELECT p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name,
-            p.image,
+            p.image_path AS image,
             COUNT(r.review_id) AS review_count, ROUND(AVG(r.rating), 1) AS avg_rating
          FROM product p
          LEFT JOIN genre g ON p.jenre_id = g.genre_id
          LEFT JOIN order_item oi ON oi.product_id = p.product_id
          LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1
          WHERE p.product_id = :product_id AND p.is_active = 1
-            GROUP BY p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name, p.image"
+            GROUP BY p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name, p.image_path"
     );
         try {
             $stmt->execute([':product_id' => $product_id]);
@@ -40,11 +40,11 @@ if ($product_id <= 0) {
             // image カラムが存在しない可能性があるので、image を外したクエリで再試行
             if (stripos($e->getMessage(), 'unknown column') !== false || stripos($e->getMessage(), '1054') !== false) {
                 error_log('Product detail query: image column missing, retrying without image');
-                $queryNoImage = str_replace("\n            p.image,", "",
-                    "SELECT p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name,\n            p.image,\n            COUNT(r.review_id) AS review_count, ROUND(AVG(r.rating), 1) AS avg_rating\n         FROM product p\n         LEFT JOIN genre g ON p.jenre_id = g.genre_id\n         LEFT JOIN order_item oi ON oi.product_id = p.product_id\n         LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1\n         WHERE p.product_id = :product_id AND p.is_active = 1\n            GROUP BY p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name, p.image"
+                $queryNoImage = str_replace("\n            p.image_path AS image,", "",
+                    "SELECT p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name,\n            p.image_path AS image,\n            COUNT(r.review_id) AS review_count, ROUND(AVG(r.rating), 1) AS avg_rating\n         FROM product p\n         LEFT JOIN genre g ON p.jenre_id = g.genre_id\n         LEFT JOIN order_item oi ON oi.product_id = p.product_id\n         LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1\n         WHERE p.product_id = :product_id AND p.is_active = 1\n            GROUP BY p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name, p.image_path"
                 );
                 // 最後の GROUP BY の p.image 部分を削る
-                $queryNoImage = str_ireplace(', p.image', '', $queryNoImage);
+                $queryNoImage = str_ireplace(', p.image_path', '', $queryNoImage);
                 $stmt = $pdo->prepare($queryNoImage);
                 $stmt->execute([':product_id' => $product_id]);
                 $product = $stmt->fetch();
@@ -82,10 +82,17 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 $image_path = '';
 if ($product) {
     if (!empty($product['image'])) {
-        if (strpos($product['image'], '/') !== false) {
-            $image_path = $product['image'];
+        $val = $product['image'];
+    } elseif (!empty($product['image_path'])) {
+        $val = $product['image_path'];
+    } else {
+        $val = '';
+    }
+    if (!empty($val)) {
+        if (strpos($val, '/') !== false) {
+            $image_path = $val;
         } else {
-            $image_path = 'image/' . rawurlencode($product['image']);
+            $image_path = 'image/' . rawurlencode($val);
         }
     } else {
         $image_num = $product_id > 0 ? (($product_id - 1) % 3) + 1 : 1;
