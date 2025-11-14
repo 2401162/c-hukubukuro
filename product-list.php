@@ -79,20 +79,11 @@ try {
       }
     }
     
-    // 各商品に画像パス付与（DBの image カラムを優先）
+    // 各商品に画像パス付与（DBの image_path（alias image）を優先、無ければ空）
     foreach ($products as &$p) {
-      // DB に image カラムがあれば優先して使う。ファイル名のみ保存されている想定。
-      if (!empty($p['image'])) {
-        // image カラムがフルパスかファイル名か判定してパスを生成
-        if (strpos($p['image'], '/') !== false) {
-          $p['image'] = $p['image'];
-        } else {
-          $p['image'] = 'image/' . rawurlencode($p['image']);
-        }
-      } else {
-        // product_id % 3 を使用して画像を振り分け（1〜3）
-        $img_num = (($p['id'] - 1) % 3) + 1;
-        $p['image'] = 'image/sample' . $img_num . '.jpg';
+      // DB に image_path（uploads/... など）があればそのまま使う。無ければ空にしてクライアント側でプレースホルダー表示
+      if (empty($p['image'])) {
+        $p['image'] = '';
       }
     }
     unset($p);
@@ -122,15 +113,9 @@ if (empty($products)) {
     if (!empty($fb)) {
       $products = $fb;
       foreach ($products as &$p) {
-        if (!empty($p['image'])) {
-            if (strpos($p['image'], '/') !== false) {
-                $p['image'] = $p['image'];
-            } else {
-                $p['image'] = 'image/' . rawurlencode($p['image']);
-            }
-        } else {
-            $img_num = (($p['id'] - 1) % 3) + 1;
-            $p['image'] = 'image/sample' . $img_num . '.jpg';
+        // image_path が無ければ空に設定してクライアント側でプレースホルダー表示
+        if (empty($p['image'])) {
+            $p['image'] = '';
         }
       }
       unset($p);
@@ -240,16 +225,23 @@ function renderPage(page=1){
   const slice = PRODUCTS.slice(start, start+PAGE_SIZE);
 
   const grid = document.getElementById('grid');
-  grid.innerHTML = slice.map(p => `
+  grid.innerHTML = slice.map(p => {
+    // 画像が無ければプレースホルダーを表示（onerror でも表示）
+    const imgSrc = p.image || '';
+    const thumbHtml = imgSrc 
+      ? `<img class="thumb" src="${escapeAttr(imgSrc)}" alt="${escapeHtml(p.name)}" onerror="this.outerHTML='<div style=\\"background:#f0f0f0;width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;\\"><span>画像未設定</span></div>'" />`
+      : `<div style="background:#f0f0f0;width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;"><span>画像未設定</span></div>`;
+    return `
     <a class="card" href="product-detail.php?id=${p.id}" aria-label="${escapeHtml(p.name)}の詳細へ">
-      <img class="thumb" src="${escapeAttr(p.image||'') }" alt="${escapeHtml(p.name)}" onerror="this.outerHTML='<div class=\\'thumb\\' style=\\'background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;\\'><span>画像未設定</span></div>'" />
+      ${thumbHtml}
       <div class="body">
         <div class="name">${escapeHtml(p.name)}</div>
         <div class="caption">売上: ${Number(p.total_sold||0)} 件 / 評価: ${(p.avg_rating ? p.avg_rating + '★ (' + p.review_count + '件)' : '未評価')}</div>
         <div class="price">¥${Number(p.price||0).toLocaleString()}</div>
       </div>
     </a>
-  `).join('');
+  `;
+  }).join('');
 
   const countText = document.getElementById('countText');
   countText.textContent = `${total}件中 ${(start+1)}〜${Math.min(start+slice.length, total)}件を表示`;
