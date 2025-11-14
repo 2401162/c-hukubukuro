@@ -59,7 +59,7 @@ try {
     foreach ($products as &$p) {
         // product_id % 3 を使用して画像を振り分け（1〜3）
         $img_num = (($p['id'] - 1) % 3) + 1;
-        $p['image'] = 'images/sample' . $img_num . '.jpg';
+        $p['image'] = 'image/sample' . $img_num . '.jpg';
     }
     unset($p);
     
@@ -89,7 +89,7 @@ if (empty($products)) {
       $products = $fb;
       foreach ($products as &$p) {
         $img_num = (($p['id'] - 1) % 3) + 1;
-        $p['image'] = 'images/sample' . $img_num . '.jpg';
+        $p['image'] = 'image/sample' . $img_num . '.jpg';
       }
       unset($p);
       $usedFallback = true;
