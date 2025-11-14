@@ -68,7 +68,7 @@ $total = $subtotal + $shipping;
 
 ?>
 
-<?php include __DIR__ . '/syouhin/header.php'; ?>
+<?php include __DIR__ . 'header.php'; ?>
 
 <style>
 .cart-wrapper {
@@ -225,4 +225,4 @@ function updateQty(id) {
 }
 </script>
 
-<?php include __DIR__ . 'admin-footer.php'; ?>
+<?php include __DIR__ . 'footer.php'; ?>
