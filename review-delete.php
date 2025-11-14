@@ -1,5 +1,4 @@
 <?php
-<?php
 require 'admin-db-connect.php';
 header('Content-Type: application/json');
 
