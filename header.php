@@ -105,7 +105,7 @@ $myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
       <?php
         // 相対パスで画像を指定（ホスティングがサブディレクトリでも動くように）
         $logoFile = 'ChatGPT Image 2025年11月5日 11_38_53.png';
-        $logoPath = 'images/' . rawurlencode($logoFile);
+        $logoPath = 'image/' . rawurlencode($logoFile);
       ?>
       <img src="<?= htmlspecialchars($logoPath, ENT_QUOTES, 'UTF-8') ?>" alt="サイトロゴ" class="site-logo">
     </a>
