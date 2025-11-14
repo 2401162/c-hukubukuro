@@ -29,6 +29,7 @@ try {
     SELECT 
       p.product_id AS id,
       p.name,
+      p.image,
       p.price,
       p.description,
       p.stock,
@@ -40,7 +41,7 @@ try {
     LEFT JOIN order_item oi ON oi.product_id = p.product_id
     LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1
     WHERE p.is_active = 1
-    GROUP BY p.product_id, p.name, p.price, p.description, p.stock
+    GROUP BY p.product_id, p.name, p.price, p.description, p.stock, p.image
   ";
     
     if ($sort === 'recommend') {
@@ -55,11 +56,21 @@ try {
     $stmt->execute();
     $products = $stmt->fetchAll();
     
-    // 各商品に画像パス付与
+    // 各商品に画像パス付与（DBの image カラムを優先）
     foreach ($products as &$p) {
+      // DB に image カラムがあれば優先して使う。ファイル名のみ保存されている想定。
+      if (!empty($p['image'])) {
+        // image カラムがフルパスかファイル名か判定してパスを生成
+        if (strpos($p['image'], '/') !== false) {
+          $p['image'] = $p['image'];
+        } else {
+          $p['image'] = 'image/' . rawurlencode($p['image']);
+        }
+      } else {
         // product_id % 3 を使用して画像を振り分け（1〜3）
         $img_num = (($p['id'] - 1) % 3) + 1;
         $p['image'] = 'image/sample' . $img_num . '.jpg';
+      }
     }
     unset($p);
     
@@ -88,8 +99,16 @@ if (empty($products)) {
     if (!empty($fb)) {
       $products = $fb;
       foreach ($products as &$p) {
-        $img_num = (($p['id'] - 1) % 3) + 1;
-        $p['image'] = 'image/sample' . $img_num . '.jpg';
+        if (!empty($p['image'])) {
+            if (strpos($p['image'], '/') !== false) {
+                $p['image'] = $p['image'];
+            } else {
+                $p['image'] = 'image/' . rawurlencode($p['image']);
+            }
+        } else {
+            $img_num = (($p['id'] - 1) % 3) + 1;
+            $p['image'] = 'image/sample' . $img_num . '.jpg';
+        }
       }
       unset($p);
       $usedFallback = true;
@@ -200,9 +219,7 @@ function renderPage(page=1){
   const grid = document.getElementById('grid');
   grid.innerHTML = slice.map(p => `
     <a class="card" href="product-detail.php?id=${p.id}" aria-label="${escapeHtml(p.name)}の詳細へ">
-      <div class="thumb" style="background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;">
-        <span>画像未設定</span>
-      </div>
+      <img class="thumb" src="${escapeAttr(p.image||'') }" alt="${escapeHtml(p.name)}" onerror="this.style.display='none'" />
       <div class="body">
         <div class="name">${escapeHtml(p.name)}</div>
         <div class="caption">売上: ${Number(p.total_sold||0)} 件 / 評価: ${(p.avg_rating ? p.avg_rating + '★ (' + p.review_count + '件)' : '未評価')}</div>
