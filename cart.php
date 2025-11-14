@@ -34,8 +34,8 @@ $shipping = 500;
 $total = $subtotal + $shipping;
 ?>
 
-<!-- ✅ header 読み込み -->
-<?php include __DIR__ . '/header.php'; ?>
+<!-- ▼ admin-header を読み込み -->
+<?php include __DIR__ . '/admin-header.php'; ?>
 
 <main style="padding:40px;">
   <h1>ショッピングカート</h1>
@@ -48,43 +48,56 @@ $total = $subtotal + $shipping;
         <?php foreach ($_SESSION['cart'] as $id => $qty): ?>
           <?php $item = $products[$id]; ?>
           <div class="cart-item" style="display:flex;border:1px solid #ddd;border-radius:6px;padding:15px;margin-bottom:20px;">
-            <img src="<?= htmlspecialchars($item['img']) ?>" alt="商品画像" style="width:100px;height:100px;object-fit:cover;border-radius:6px;">
+            
+            <!-- 商品画像 -->
+            <img src="<?= htmlspecialchars($item['img']) ?>" alt="商品画像"
+                 style="width:100px;height:100px;object-fit:cover;border-radius:6px;">
+            
+            <!-- 商品詳細 -->
             <div style="margin-left:15px;flex-grow:1;">
               <h3 style="margin:0 0 5px 0;font-size:16px;"><?= htmlspecialchars($item['name']) ?></h3>
               <p style="margin:3px 0;color:#555;">在庫：<?= $item['stock'] ? 'あり' : 'なし' ?></p>
               <p style="margin:3px 0;color:#555;">お届け予定：〇月〇日〜〇月〇日</p>
             </div>
+
+            <!-- 金額 & 操作 -->
             <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;">
               <strong><?= number_format($item['price'] * $qty) ?>円</strong>
+
               <div>
                 <select id="qty-<?= $id ?>" onchange="updateQty(<?= $id ?>)">
                   <?php for ($i = 1; $i <= 10; $i++): ?>
                     <option value="<?= $i ?>" <?= $i == $qty ? 'selected' : '' ?>><?= $i ?></option>
                   <?php endfor; ?>
                 </select>
+
                 <form method="post" style="display:inline;">
                   <button type="submit" name="remove" value="<?= $id ?>">削除する</button>
                 </form>
               </div>
             </div>
+
           </div>
         <?php endforeach; ?>
       <?php endif; ?>
     </div>
 
+    <!-- 合計ボックス -->
     <div class="summary-box" style="width:25%;border:1px solid #ddd;border-radius:6px;padding:20px;text-align:right;">
       <p>小計：<?= number_format($subtotal) ?>円</p>
       <p>送料：<?= number_format($shipping) ?>円</p>
       <p style="font-weight:bold;">合計：<?= number_format($total) ?>円</p>
-      <button style="background:#ff3b3b;color:#fff;padding:10px 20px;border:none;border-radius:5px;margin-top:20px;font-weight:bold;cursor:pointer;">
+
+      <button style="background:#ff3b3b;color:#fff;padding:10px 20px;border:none;border-radius:5px;
+                     margin-top:20px;font-weight:bold;cursor:pointer;">
         購入に進む
       </button>
     </div>
   </div>
 </main>
 
-<!-- ✅ footer 読み込み -->
-<?php include __DIR__ . '/footer.php'; ?>
+<!-- ▼ admin-footer を読み込み -->
+<?php include __DIR__ . '/admin-footer.php'; ?>
 
 <script>
 function updateQty(id) {
@@ -94,7 +107,9 @@ function updateQty(id) {
   formData.append("id", id);
   formData.append("qty", qty);
 
-  fetch("cart.php", { method: "POST", body: formData })
-    .then(() => location.reload());
+  fetch("cart.php", {
+    method: "POST",
+    body: formData
+  }).then(() => location.reload());
 }
 </script>
