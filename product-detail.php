@@ -24,13 +24,14 @@ if ($product_id <= 0) {
         // product テーブル: product_id (PK), jenre_id, name, price, stock, description, is_active
     $stmt = $pdo->prepare(
         "SELECT p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name,
+            p.image,
             COUNT(r.review_id) AS review_count, ROUND(AVG(r.rating), 1) AS avg_rating
          FROM product p
          LEFT JOIN genre g ON p.jenre_id = g.genre_id
          LEFT JOIN order_item oi ON oi.product_id = p.product_id
          LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1
          WHERE p.product_id = :product_id AND p.is_active = 1
-         GROUP BY p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name"
+            GROUP BY p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name, p.image"
     );
         $stmt->execute([':product_id' => $product_id]);
         $product = $stmt->fetch();
@@ -60,8 +61,22 @@ if ($product_id <= 0) {
 function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 
 // 商品IDがあるなら画像番号を振り分け
-$image_num = $product_id > 0 ? (($product_id - 1) % 3) + 1 : 1;
-$image_path = 'image/sample' . $image_num . '.jpg';
+// DB の image カラムがあれば優先してパスを作る。ファイル名が入っている想定。
+$image_path = '';
+if ($product) {
+    if (!empty($product['image'])) {
+        if (strpos($product['image'], '/') !== false) {
+            $image_path = $product['image'];
+        } else {
+            $image_path = 'image/' . rawurlencode($product['image']);
+        }
+    } else {
+        $image_num = $product_id > 0 ? (($product_id - 1) % 3) + 1 : 1;
+        $image_path = 'image/sample' . $image_num . '.jpg';
+    }
+} else {
+    $image_path = 'image/sample1.jpg';
+}
 ?>
 <!DOCTYPE html>
 <html lang="ja">
