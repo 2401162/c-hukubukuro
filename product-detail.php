@@ -61,7 +61,7 @@ function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 
 // 商品IDがあるなら画像番号を振り分け
 $image_num = $product_id > 0 ? (($product_id - 1) % 3) + 1 : 1;
-$image_path = 'images/sample' . $image_num . '.jpg';
+$image_path = 'image/sample' . $image_num . '.jpg';
 ?>
 <!DOCTYPE html>
 <html lang="ja">
