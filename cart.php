@@ -71,7 +71,6 @@ $total = $subtotal + $shipping;
 <?php include __DIR__ . 'admin-header.php'; ?>
 
 <style>
-/* ここからデザイン（あなたのスクショと同じスタイル） */
 .cart-wrapper {
   width: 100%;
   max-width: 1200px;
