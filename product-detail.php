@@ -77,29 +77,11 @@ if ($product_id <= 0) {
 
 function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 
-// 商品IDがあるなら画像番号を振り分け
-// DB の image カラムがあれば優先してパスを作る。ファイル名が入っている想定。
+// DB の image_path（alias image）を優先して使用
+// 無ければ空に設定（プレースホルダーを表示）
 $image_path = '';
-if ($product) {
-    if (!empty($product['image'])) {
-        $val = $product['image'];
-    } elseif (!empty($product['image_path'])) {
-        $val = $product['image_path'];
-    } else {
-        $val = '';
-    }
-    if (!empty($val)) {
-        if (strpos($val, '/') !== false) {
-            $image_path = $val;
-        } else {
-            $image_path = 'image/' . rawurlencode($val);
-        }
-    } else {
-        $image_num = $product_id > 0 ? (($product_id - 1) % 3) + 1 : 1;
-        $image_path = 'image/sample' . $image_num . '.jpg';
-    }
-} else {
-    $image_path = 'image/sample1.jpg';
+if ($product && !empty($product['image'])) {
+    $image_path = $product['image']; // uploads/... などそのまま使用
 }
 ?>
 <!DOCTYPE html>
@@ -152,7 +134,11 @@ if ($product) {
         <?php elseif ($product): ?>
             <div class="detail-wrap">
                 <div>
-                    <img class="thumb" src="<?= h($image_path) ?>" alt="<?= h($product['name']) ?>">
+                    <?php if (!empty($image_path)): ?>
+                        <img class="thumb" src="<?= h($image_path) ?>" alt="<?= h($product['name']) ?>" onerror="this.outerHTML='<div style=\"background:#f0f0f0;width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;color:#999;font-size:14px;text-align:center;\"><span>画像未設定</span></div>'" />
+                    <?php else: ?>
+                        <div style="background:#f0f0f0;width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;color:#999;font-size:14px;text-align:center;"><span>画像未設定</span></div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="info">
