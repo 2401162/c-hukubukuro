@@ -75,6 +75,13 @@ $myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
     text-decoration: none;
   }
 
+  /* SVG アイコンのサイズを明示して大きく表示する（Font Awesome の代替） */
+  .site-header .actions a svg {
+    width: 28px;
+    height: 28px;
+    display: block;
+  }
+
   .site-header .actions a:hover { opacity: .85; }
 
   .cart-badge {
