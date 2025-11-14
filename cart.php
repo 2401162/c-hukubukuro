@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . "/db-connect.php";   // ← DB 接続ファイル読み込み
+require_once __DIR__ . "db-connect.php";   // ← DB 接続ファイル読み込み
 
 // ==============================
 // DB 接続
@@ -68,7 +68,7 @@ $total = $subtotal + $shipping;
 
 ?>
 
-<?php include __DIR__ . '/admin-header.php'; ?>
+<?php include __DIR__ . 'admin-header.php'; ?>
 
 <style>
 /* ここからデザイン（あなたのスクショと同じスタイル） */
@@ -226,4 +226,4 @@ function updateQty(id) {
 }
 </script>
 
-<?php include __DIR__ . '/admin-footer.php'; ?>
+<?php include __DIR__ . 'admin-footer.php'; ?>
