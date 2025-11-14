@@ -29,7 +29,7 @@ try {
     SELECT 
       p.product_id AS id,
       p.name,
-      p.image,
+      p.image_path AS image,
       p.price,
       p.description,
       p.stock,
@@ -41,7 +41,7 @@ try {
     LEFT JOIN order_item oi ON oi.product_id = p.product_id
     LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1
     WHERE p.is_active = 1
-    GROUP BY p.product_id, p.name, p.price, p.description, p.stock, p.image
+    GROUP BY p.product_id, p.name, p.price, p.description, p.stock, p.image_path
   ";
     
     if ($sort === 'recommend') {
@@ -60,13 +60,13 @@ try {
       // カラムが存在しない等のエラーであれば image を外したクエリで再試行
       if (stripos($e->getMessage(), 'unknown column') !== false || stripos($e->getMessage(), '1054') !== false) {
         error_log('Product query: image column missing, retrying without image');
-        // image カラムを除いたクエリを作り直す
-        $queryNoImage = str_replace('      p.image,\n', '', $query);
-        $queryNoImage = str_replace(', p.image', '', $queryNoImage);
-        $queryNoImage = str_replace(', p.image', '', $queryNoImage);
-        $queryNoImage = str_replace('p.image', '', $queryNoImage);
-        // GROUP BY から p.image を削除
-        $queryNoImage = str_ireplace(', p.image', '', $queryNoImage);
+          // image カラムを除いたクエリを作り直す
+        $queryNoImage = str_replace('      p.image_path AS image,\n', '', $query);
+        $queryNoImage = str_replace(', p.image_path', '', $queryNoImage);
+        $queryNoImage = str_replace(', p.image_path', '', $queryNoImage);
+        $queryNoImage = str_replace('p.image_path', '', $queryNoImage);
+        // GROUP BY から p.image_path を削除
+        $queryNoImage = str_ireplace(', p.image_path', '', $queryNoImage);
         try {
           $stmt = $pdo->prepare($queryNoImage);
           $stmt->execute();
