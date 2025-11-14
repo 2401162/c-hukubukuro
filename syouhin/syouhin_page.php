@@ -41,17 +41,11 @@ if ($product) {
     echo '<div class="product">';
     // 画像カラムがあれば優先、なければ product_id ベースのファイル名を使う
     $imgSrc = '';
-    $imgVal = '';
     if (!empty($product['image'])) {
-        $imgVal = $product['image'];
-    } elseif (!empty($product['image_path'])) {
-        $imgVal = $product['image_path'];
-    }
-    if (!empty($imgVal)) {
-        if (strpos($imgVal, '/') !== false) {
-            $imgSrc = $imgVal;
+        if (strpos($product['image'], '/') !== false) {
+            $imgSrc = $product['image'];
         } else {
-            $imgSrc = 'image/' . rawurlencode($imgVal);
+            $imgSrc = 'image/' . rawurlencode($product['image']);
         }
     } else {
         $imgSrc = 'image/' . rawurlencode($product['product_id']) . '.png';
