@@ -52,9 +52,32 @@ try {
         $query .= " ORDER BY p.product_id DESC";
     }
     
-    $stmt = $pdo->prepare($query);
-    $stmt->execute();
-    $products = $stmt->fetchAll();
+    try {
+      $stmt = $pdo->prepare($query);
+      $stmt->execute();
+      $products = $stmt->fetchAll();
+    } catch (PDOException $e) {
+      // カラムが存在しない等のエラーであれば image を外したクエリで再試行
+      if (stripos($e->getMessage(), 'unknown column') !== false || stripos($e->getMessage(), '1054') !== false) {
+        error_log('Product query: image column missing, retrying without image');
+        // image カラムを除いたクエリを作り直す
+        $queryNoImage = str_replace('      p.image,\n', '', $query);
+        $queryNoImage = str_replace(', p.image', '', $queryNoImage);
+        $queryNoImage = str_replace(', p.image', '', $queryNoImage);
+        $queryNoImage = str_replace('p.image', '', $queryNoImage);
+        // GROUP BY から p.image を削除
+        $queryNoImage = str_ireplace(', p.image', '', $queryNoImage);
+        try {
+          $stmt = $pdo->prepare($queryNoImage);
+          $stmt->execute();
+          $products = $stmt->fetchAll();
+        } catch (PDOException $e2) {
+          throw $e2; // 元の catch に任せる
+        }
+      } else {
+        throw $e;
+      }
+    }
     
     // 各商品に画像パス付与（DBの image カラムを優先）
     foreach ($products as &$p) {
@@ -219,7 +242,7 @@ function renderPage(page=1){
   const grid = document.getElementById('grid');
   grid.innerHTML = slice.map(p => `
     <a class="card" href="product-detail.php?id=${p.id}" aria-label="${escapeHtml(p.name)}の詳細へ">
-      <img class="thumb" src="${escapeAttr(p.image||'') }" alt="${escapeHtml(p.name)}" onerror="this.style.display='none'" />
+      <img class="thumb" src="${escapeAttr(p.image||'') }" alt="${escapeHtml(p.name)}" onerror="this.outerHTML='<div class=\\'thumb\\' style=\\'background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;\\'><span>画像未設定</span></div>'" />
       <div class="body">
         <div class="name">${escapeHtml(p.name)}</div>
         <div class="caption">売上: ${Number(p.total_sold||0)} 件 / 評価: ${(p.avg_rating ? p.avg_rating + '★ (' + p.review_count + '件)' : '未評価')}</div>
