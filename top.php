@@ -40,7 +40,7 @@ $ranking = [
       <div class="product-section">
         <div class="section-top">
           <h2>おすすめ</h2>
-          <a href="recommend-list.php" class="list-link">一覧へ <i class="fas fa-chevron-right small-icon" aria-hidden="true"></i></a>
+          <a href="product-list.php" class="list-link">一覧へ <i class="fas fa-chevron-right small-icon" aria-hidden="true"></i></a>
         </div>
 
         <div class="product-list">
@@ -61,7 +61,7 @@ $ranking = [
       <div class="product-section">
         <div class="section-top">
           <h2>ランキング</h2>
-          <a href="ranking-list.php" class="list-link">一覧へ <i class="fas fa-chevron-right small-icon" aria-hidden="true"></i></a>
+          <a href="product-list.php" class="list-link">一覧へ <i class="fas fa-chevron-right small-icon" aria-hidden="true"></i></a>
         </div>
 
         <div class="product-list">
