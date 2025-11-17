@@ -4,7 +4,7 @@ new Vue({
     products: (typeof productData !== 'undefined' && Array.isArray(productData)) ? productData : [],
     showForm: false,
     editProduct: null,
-    imageModal: null,  // ← 追加
+    imageModal: null,
     newProduct: {
       name: '',
       jenre_id: '',
@@ -18,9 +18,22 @@ new Vue({
     searchQuery: '',
     searchField: 'all'
   },
-  // ...existing computed...
+  computed: {
+    filteredProducts() {
+      const q = String(this.searchQuery || '').trim().toLowerCase();
+      const items = Array.isArray(this.products) ? this.products : [];
+      if (!q) return items;
+      return items.filter(p => {
+        const name = String(p.name || '').toLowerCase();
+        const jenre = String(p.jenre_id || '').toLowerCase();
+        const desc = String(p.description || '').toLowerCase();
+        if (this.searchField === 'name') return name.includes(q);
+        if (this.searchField === 'jenre_id') return jenre.includes(q);
+        return name.includes(q) || jenre.includes(q) || desc.includes(q);
+      });
+    }
+  },
   methods: {
-    // ファイル選択ハンドラ（編集/追加両対応）
     onFileChange(e, isEdit) {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
@@ -49,7 +62,6 @@ new Vue({
       reader.readAsDataURL(file);
     },
 
-    // 画像を product-upload.php に送信
     uploadFile(file) {
       const fd = new FormData();
       fd.append('image', file);
@@ -61,12 +73,10 @@ new Vue({
         });
     },
 
-    // 画像モーダルを表示
     showImageModal(item) {
       this.imageModal = item;
     },
 
-    // 追加：画像がある場合は uploadFile を先に呼ぶ
     addProduct() {
       const doInsert = (imagePath) => {
         const payload = {
@@ -115,7 +125,6 @@ new Vue({
       }
     },
 
-    // 更新：画像変更がある場合は uploadFile を先に呼ぶ
     updateProduct() {
       if (!this.editProduct) return;
       const proceedUpdate = (imagePath) => {
