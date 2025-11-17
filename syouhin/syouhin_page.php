@@ -22,9 +22,9 @@ $avgStmt = $pdo->prepare('
         AVG(r.rating) AS avg_rating,
         COUNT(r.review_id) AS review_count
     FROM review r
-    JOIN orders_item oi ON r.order_item_id = oi.order_item_id
+    JOIN order_item oi ON r.order_item_id = oi.order_item_id
     JOIN orders o ON oi.order_id = o.order_id
-    WHERE oi.order_datetime = ? AND r.is_active = 1
+    WHERE oi.product_id = ? AND r.is_active = 1
 ');
 $avgStmt->execute([$product['product_id']]);
 $avgResult = $avgStmt->fetch(PDO::FETCH_ASSOC);
@@ -72,21 +72,21 @@ if ($product) {
     echo '</div>';
 
     $sql = $pdo->prepare('
-    SELECT 
-        r.review_id,
-        r.rating,
-        r.comment,
-        r.created_at,
-        c.name AS customer_name
-    FROM review r
-    JOIN orders_item oi ON r.order_item_id = oi.order_item_id
-    JOIN orders o ON oi.order_id = o.order_id
-    JOIN customer c ON o.customer_id = c.customer_id
-    WHERE oi.order_datetime = ? AND r.is_active = 1
-    ORDER BY r.created_at DESC
-');
-$sql->execute([$product['product_id']]);
-$reviews = $sql->fetchAll();
+        SELECT 
+            r.review_id,
+            r.rating,
+            r.comment,
+            r.created_at,
+            c.name AS customer_name
+        FROM review r
+        JOIN order_item oi ON r.order_item_id = oi.order_item_id
+        JOIN orders o ON oi.order_id = o.order_id
+        JOIN customer c ON o.customer_id = c.customer_id
+        WHERE oi.product_id = ? AND r.is_active = 1
+        ORDER BY r.created_at DESC
+    ');
+    $sql->execute([$product['product_id']]);
+    $reviews = $sql->fetchAll(PDO::FETCH_ASSOC);
 
 
 
