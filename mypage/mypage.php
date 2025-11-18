@@ -1,6 +1,6 @@
 <?php session_start(); ?>
-<?php require 'db-connect.php'; ?>
-<?php require 'login.php'; ?>
+<?php require __DIR__ . '/db-connect.php'; ?>
+<?php require __DIR__ . '/login.php'; ?>
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -9,7 +9,7 @@
     <title>福袋サイト　購入履歴</title>
 </head>
 <body>
-<?php require 'header.php'; ?>
+<?php require __DIR__ . '/header.php'; ?>
 <h2>購入履歴</h2>
 <div class="buy">
 <div class="rireki">
@@ -82,6 +82,6 @@ if (empty($orders)) {
 </div>
 </div>
 
-<?php require 'style2.php'; ?>
+<?php require __DIR__ . '/style2.php'; ?>
 </body>
 </html>

@@ -1,5 +1,5 @@
-<?php require 'db-connect.php'; ?>
-<?php require 'login.php'; ?>
+<?php require __DIR__ . '/db-connect.php'; ?>
+<?php require __DIR__ . '/login.php'; ?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -8,7 +8,7 @@
     <title>福袋サイト</title>
 </head>
 <body>
-<?php require 'header.php'; ?>
+<?php require __DIR__ . '/header.php'; ?>
 <div class="syouhin">
 <?php
 $pdo = new PDO($connect, USER, PASS);
@@ -129,6 +129,6 @@ if ($product) {
 } 
 ?>
 </div>
-<?php require 'style.php'; ?>
+<?php require __DIR__ . '/style.php'; ?>
 </body>
 </html>
