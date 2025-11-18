@@ -89,7 +89,7 @@
 <header class="site-header">
   <!-- 左：ロゴ -->
   <div class="brand">
-    <a href="/index.php" aria-label="ホームへ">
+    <a href="/top.php" aria-label="ホームへ">
       <img src="/image/ChatGPT%20Image%202025年11月5日%2011_38_53.png" alt="サイトロゴ" class="site-logo">
     </a>
     <span class="site-title">福袋販売サイト</span>
