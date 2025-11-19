@@ -1,4 +1,11 @@
 <?php
+// recommend.php
+// 必要ファイル読み込み
+require_once 'db-connect.php';
+require_once 'header.php';
+
+
+// 現在のおすすめ取得
 $stmt = $pdo->query("SELECT product_id FROM recommended ORDER BY sort_order ASC");
 $current = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
@@ -7,7 +14,6 @@ $current = $stmt->fetchAll(PDO::FETCH_COLUMN);
 $stmt2 = $pdo->query("SELECT product_id, name, jenre_id FROM product WHERE is_active = 1");
 $products = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 
 <style>
 .wrapper { width: 90%; margin: auto; }
@@ -44,7 +50,7 @@ $p = array_values(array_filter($products, fn($a) => $a['product_id'] == $id))[0]
 </div>
 
 
-<form action="admin-save_recommend.php" method="post">
+<form action="save_recommend.php" method="post">
 <input type="hidden" name="order" id="orderInput">
 <button class="save-btn" onclick="saveOrder()">保存する</button>
 </form>
