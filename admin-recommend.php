@@ -50,7 +50,7 @@ $p = array_values(array_filter($products, fn($a) => $a['product_id'] == $id))[0]
 </div>
 
 
-<form action="save_recommend.php" method="post">
+<form action="admin-save_recommend.php" method="post">
 <input type="hidden" name="order" id="orderInput">
 <button class="save-btn" onclick="saveOrder()">保存する</button>
 </form>
