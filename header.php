@@ -15,7 +15,7 @@ if (session_status() === PHP_SESSION_NONE) {
 $isLoggedIn = !empty($_SESSION['customer']);
 
 // ✅ マイページの遷移先を決定
-$myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
+$myPageUrl = $isLoggedIn ? "mypage/mypage.php" : "rogin-input.php";
 ?>
 <!-- Icons: using inline SVG to avoid external CDN/tracking issues -->
 
