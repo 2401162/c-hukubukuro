@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . "db-connect.php";   // ← DB 接続ファイル読み込み
+require_once __DIR__ . "/db-connect.php";   // ← DB 接続ファイル読み込み
 
 // ==============================
 // DB 接続
