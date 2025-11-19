@@ -9,6 +9,7 @@ $postal2     = $_POST['postal2']     ?? '';
 $prefecture  = $_POST['prefecture']  ?? '';
 $destination = $_POST['destination'] ?? '';
 $card_number = $_POST['card_number'] ?? '';
+$payment_method = $_POST['payment_method'] ?? '';
 
 $address = $prefecture; // 必要なら市区町村など足してOK
 
@@ -20,26 +21,30 @@ $address = $prefecture; // 必要なら市区町村など足してOK
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ご購入内容確認</title>
   <style>
+    body { margin:0; font-family:"Noto Sans JP",sans-serif; background:#fff; }
+    
     .confirm-page {
       max-width: 720px;
       margin: 40px auto 60px;
       padding: 0 12px;
       box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     .confirm-block {
-      border: 1px solid #000;
+      border: 1px solid #d9d9d9;
       background: #fff;
       padding: 18px 22px 20px;
       box-sizing: border-box;
       margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 0 1px #e5e5e5;
     }
 
     .confirm-title {
       font-size: 16px;
       font-weight: 700;
       margin-bottom: 12px;
+      color: #222;
     }
 
     .confirm-table {
@@ -58,17 +63,20 @@ $address = $prefecture; // 必要なら市区町村など足してOK
     .confirm-table th {
       width: 120px;
       font-weight: 700;
+      color: #444;
     }
 
     .purchase-section-title {
       font-size: 14px;
       font-weight: 700;
       margin-bottom: 4px;
+      color: #222;
     }
 
     .purchase-row {
       font-size: 13px;
       margin-bottom: 2px;
+      color: #333;
     }
 
     .purchase-total {
@@ -79,7 +87,7 @@ $address = $prefecture; // 必要なら市区町村など足してOK
     }
 
     .purchase-total span.amount {
-      color: #ff0000;
+      color: #e43131;
     }
 
     .confirm-buttons {
@@ -96,6 +104,7 @@ $address = $prefecture; // 必要なら市区町村など足してOK
       font-size: 14px;
       border: none;
       cursor: pointer;
+      border-radius: 4px;
     }
 
     .btn-back {
@@ -104,7 +113,7 @@ $address = $prefecture; // 必要なら市区町村など足してOK
     }
 
     .btn-complete {
-      background: #ff0000;
+      background: #e43131;
       color: #fff;
     }
   </style>
@@ -122,6 +131,7 @@ $address = $prefecture; // 必要なら市区町村など足してOK
       <input type="hidden" name="prefecture"  value="<?= htmlspecialchars($prefecture, ENT_QUOTES, 'UTF-8') ?>">
       <input type="hidden" name="destination" value="<?= htmlspecialchars($destination, ENT_QUOTES, 'UTF-8') ?>">
       <input type="hidden" name="card_number" value="<?= htmlspecialchars($card_number, ENT_QUOTES, 'UTF-8') ?>">
+      <input type="hidden" name="payment_method" value="<?= htmlspecialchars($payment_method, ENT_QUOTES, 'UTF-8') ?>">
 
       <div class="confirm-block">
         <div class="confirm-title">入力内容確認</div>
@@ -148,7 +158,7 @@ $address = $prefecture; // 必要なら市区町村など足してOK
           </tr>
           <tr>
             <th>お支払方法</th>
-            <td>クレジットカード（visa 他）</td>
+            <td>クレジットカード（<?= htmlspecialchars($payment_method !== '' ? $payment_method : 'visa 他', ENT_QUOTES, 'UTF-8') ?>）</td>
           </tr>
         </table>
       </div>
