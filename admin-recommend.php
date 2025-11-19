@@ -2,6 +2,7 @@
 // admin-recommend.php
 require_once 'admin-db-connect.php';
 require_once 'admin-header.php';
+require 'admin-menu.php';
 
 // 現在のおすすめ（recommended）を取得
 $stmt = $pdo->query("SELECT product_id FROM recommended ORDER BY sort_order ASC");
@@ -17,11 +18,7 @@ foreach ($products as $p) {
     $productsById[$p['product_id']] = $p;
 }
 ?>
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>おすすめ管理（管理者）</title>
+
 <style>
 /* 最低限のスタイル（必要なら header.css に統合して） */
 .wrapper { width: 90%; margin: 30px auto; }
@@ -31,7 +28,7 @@ foreach ($products as $p) {
 .item-box img { width: 100%; height: 100%; object-fit: cover; border-radius:4px; }
 .save-btn { margin-top: 24px; padding: 10px 18px; background:#6b58e0; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px; }
 </style>
-</head>
+
 <body>
 <div class="wrapper">
   <h2 class="section-title">現在のおすすめ</h2>
@@ -41,7 +38,7 @@ foreach ($products as $p) {
       $p = $productsById[$id];
     ?>
       <div class="item-box" draggable="true" ondragstart="drag(event)" data-id="<?= htmlspecialchars($p['product_id']) ?>">
-        <img src="/image/<?= htmlspecialchars($p['jenre_id']) ?>.png" alt="<?= htmlspecialchars($p['name']) ?>">
+        <img src="image/<?= htmlspecialchars($p['jenre_id']) ?>.png" alt="<?= htmlspecialchars($p['name']) ?>">
       </div>
     <?php endforeach; ?>
   </div>
@@ -50,7 +47,7 @@ foreach ($products as $p) {
   <div id="candidates" class="drop-zone" ondragover="allowDrop(event)" ondrop="drop(event)">
     <?php foreach ($products as $p): if (!in_array($p['product_id'], $current)): ?>
       <div class="item-box" draggable="true" ondragstart="drag(event)" data-id="<?= htmlspecialchars($p['product_id']) ?>">
-        <img src="/image/<?= htmlspecialchars($p['jenre_id']) ?>.png" alt="<?= htmlspecialchars($p['name']) ?>">
+        <img src="image/<?= htmlspecialchars($p['jenre_id']) ?>.png" alt="<?= htmlspecialchars($p['name']) ?>">
       </div>
     <?php endif; endforeach; ?>
   </div>
