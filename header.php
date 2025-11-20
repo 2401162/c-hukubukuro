@@ -16,6 +16,7 @@ $isLoggedIn = !empty($_SESSION['customer']);
 
 // ✅ マイページの遷移先を決定
 $myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
+$myPageUrl = $isLoggedIn ? "mypage/mypage.php" : "rogin-input.php";
 ?>
 <!-- Icons: using inline SVG to avoid external CDN/tracking issues -->
 
@@ -132,6 +133,7 @@ $myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
 
     <!-- カート -->
     <a href="/cart.php" aria-label="カート">
+    <a href="cart.php" aria-label="カート">
       <!-- Cart icon (inline SVG) -->
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
         <path d="M7 4h-2l-1 2v2h2l3.6 7.59-1.35 2.45C8.89 18.76 9.5 20 11 20h8v-2h-7.42c-.14 0-.25-.11-.25-.25l.03-.12L12.1 15h5.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49-.02-.02c.07-.14.08-.3.08-.46 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59L6.5 16h12.02" fill="#fff"/>
