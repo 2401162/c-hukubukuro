@@ -39,8 +39,14 @@
 }
 
 /* 価格の見た目 */
-.product p small {
-    font-size: 12px;
+.product p.price {
+    font-size: 28px;
+    margin: 8px 0;
+}
+
+.product p.price small {
+    font-size: 14px;
+    margin-left: 3px;
 }
 
 .product .average-rating small {
@@ -112,6 +118,10 @@ input[type="submit"]:hover {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+}
+
+.stars {
+    font-size: 25px;
 }
 
 .review-comment {

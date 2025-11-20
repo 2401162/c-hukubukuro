@@ -1,228 +1,241 @@
 <?php
 session_start();
-require_once __DIR__ . "db-connect.php";   // ← DB 接続ファイル読み込み
+require_once __DIR__ . '/db-connect.php';
 
-// ==============================
-// DB 接続
-// ==============================
-try {
-    $pdo = new PDO($connect, USER, PASS);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    exit("DB接続に失敗しました：" . $e->getMessage());
+if (!empty($_POST['id']) && !empty($_POST['name']) && !empty($_POST['price']) && !empty($_POST['count'])) {
+    $id = $_POST['id'];
+    $name = $_POST['name'];
+    $price = (int)$_POST['price'];
+    $count = (int)$_POST['count'];
+
+    // すでにカートにある場合は個数を加算
+    if (isset($_SESSION['cart'][$id])) {
+        $_SESSION['cart'][$id]['count'] += $count;
+    } else {
+        $_SESSION['cart'][$id] = [
+            'id' => $id,
+            'name' => $name,
+            'price' => $price,
+            'count' => $count,
+            'stock' => $stock,
+        ];
+    }
+
+    // 追加後はカートページへリダイレクト
+    header('Location: cart.php');
+    exit;
 }
 
-// ==============================
-// 商品データ取得
-// ==============================
-// products テーブル前提：id, name, price, img, stock
-$sql = "SELECT id, name, price, img, stock FROM products";
-$stmt = $pdo->query($sql);
-
-$products = [];
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    $products[$row["id"]] = $row;
+if (!empty($_POST['update']) && !empty($_POST['update_id']) && !empty($_POST['update_count'])) {
+    $id = $_POST['update_id'];
+    $count = (int)$_POST['update_count'];
+    if (isset($_SESSION['cart'][$id])) {
+        $_SESSION['cart'][$id]['count'] = $count;
+    }
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit;
 }
 
-// ==============================
-// カート初期化（デモ用）
-// ==============================
-if (!isset($_SESSION['cart'])) {
-    // products の最初の2つを自動で入れる例
-    $pids = array_keys($products);
-    $_SESSION['cart'] = [
-        $pids[0] => 1,
-        $pids[1] => 1
-    ];
+if (!empty($_POST['remove'])) {
+    $id = $_POST['remove'];
+    if (isset($_SESSION['cart'][$id])) {
+        unset($_SESSION['cart'][$id]);
+    }
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit;
 }
 
-// ==============================
-// 商品削除
-// ==============================
-if (isset($_POST['remove'])) {
-    $id = intval($_POST['remove']);
-    unset($_SESSION['cart'][$id]);
-}
-
-// ==============================
-// 数量更新
-// ==============================
-if (isset($_POST['update'])) {
-    $id = intval($_POST['id']);
-    $qty = max(1, intval($_POST['qty']));
-    $_SESSION['cart'][$id] = $qty;
-}
-
-// ==============================
-// 合計計算
-// ==============================
 $subtotal = 0;
-foreach ($_SESSION['cart'] as $id => $qty) {
-    if (isset($products[$id])) {
-        $subtotal += $products[$id]['price'] * $qty;
+if (!empty($_SESSION['cart'])) {
+    foreach ($_SESSION['cart'] as $item) {
+        $subtotal += $item['price'] * $item['count'];
     }
 }
-
-$shipping = 500;
+$shipping = $subtotal > 0 ? 500 : 0;
 $total = $subtotal + $shipping;
-
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>カート画面</title>
+</head>
+<body>
+<?php include __DIR__ . '/header.php'; ?>
 
-<?php include __DIR__ . 'header.php'; ?>
+<div class="cart-wrapper">
+    <h2>ショッピングカート</h2>
+    <div class="cart-flex">
+        <!-- 左：商品一覧 -->
+        <div class="cart-items">
+            <?php
+            if (empty($_SESSION['cart'])) {
+                echo "<p>カートに商品がありません。</p>";
+            } else {
+                foreach ($_SESSION['cart'] as $id => $item) {
+            ?>
+            <div class="cart-card">
+                <img src="image/<?= htmlspecialchars($item['id']) ?>.png" alt="<?= htmlspecialchars($item['name']) ?>">
+                <div class="cart-info">
+                    <!-- 上段：商品名と金額 -->
+                    <div class="top-row">
+                        <p class="name"><?= htmlspecialchars($item['name']) ?></p>
+                        <h3 class="price"><?= number_format($item['price']) ?>円</h3>
+                    </div>
+
+                    <p class="date">
+                        <?php
+                        $deliveryDate = strtotime('+3 days');
+                        $weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+                        $dayOfWeek = $weekDays[date('w', $deliveryDate)];
+                        $dateText = date('n月j日', $deliveryDate) . '(' . $dayOfWeek . ')';
+                        ?>
+                        <span class="delivery-date"><?= $dateText ?></span>にお届け予定
+                    </p>
+
+                    <!-- 下段：個数と削除ボタン -->
+                    <div class="bottom-row">
+                        <form method="post" class="qty-form">
+                            <select name="update_count" onchange="this.form.submit()">
+                                <?php
+                                for ($i = 1; $i <= 10; $i++) {
+                                    $selected = $i == $item['count'] ? 'selected' : '';
+                                    echo "<option value='$i' $selected>$i</option>";
+                                }
+                                ?>
+                            </select>
+                            <input type="hidden" name="update_id" value="<?= $id ?>">
+                            <input type="hidden" name="update" value="1">
+                        </form>
+
+                        <form method="post" class="remove-form">
+                            <button type="submit" name="remove" value="<?= $id ?>">削除する</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <?php
+                }
+            }
+            ?>
+        </div>
+
+        <!-- 右：合計 -->
+        <div class="cart-summary">
+            <p>小計: <?= number_format($subtotal) ?>円</p>
+            <p>送料: <?= number_format($shipping) ?>円</p>
+            <p class="total"><strong>合計: <?= number_format($total) ?>円</strong></p>
+            <form action="checkout.php" method="post">
+                <button type="submit" class="buy-btn">購入に進む</button>
+            </form>
+        </div>
+    </div>
+</div>
 
 <style>
 .cart-wrapper {
-  width: 100%;
-  max-width: 1200px;
-  margin: 40px auto;
+    max-width: 1000px;
+    margin: 40px;
 }
-
-.cart-title {
-  font-size: 32px;
-  font-weight: bold;
-  margin-bottom: 30px;
-}
-
 .cart-flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+    display: flex;
+    gap: 20px;
+}
+.cart-items {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.cart-card {
+    display: flex;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #ffffffff;
+    padding: 10px;
+}
+.cart-card img {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+.cart-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+    padding: 5px;
 }
 
-.cart-item-box {
-  width: 70%;
+.cart-info .date {
+    margin-left: 8px;
 }
 
-.cart-item {
-  display: flex;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
-  background: #fff;
+.cart-info .date .delivery-date {
+    font-weight: bold;
 }
 
-.cart-item img {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 6px;
+/* 上段：商品名と金額を横並び */
+.top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.cart-item-info {
-  margin-left: 15px;
-  flex-grow: 1;
+.cart-info .name {
+    font-weight: bold;
+    margin: 0;
 }
 
-.cart-item-name {
-  font-size: 18px;
-  font-weight: bold;
+.top-row .price {
+    font-weight: bold;
+    font-size: 24px;
 }
 
-.cart-right {
-  width: 25%;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 20px;
-  background: #fff;
+/* 下段：個数と削除ボタン */
+.bottom-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.qty-form select {
+    padding: 4px;
+}
+
+.cart-summary {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    background: #fff;
+    height: fit-content;
+}
+
+.cart-summary .total {
+    color: #ff4a4a;
+    font-size: 20px;
 }
 
 .buy-btn {
-  background: #ff4a4a;
-  color: #fff;
-  width: 100%;
-  padding: 12px 0;
-  border: none;
-  border-radius: 6px;
-  margin-top: 20px;
-  font-size: 16px;
-  cursor: pointer;
+    width: 100%;
+    padding: 10px 0;
+    background: #ff8c8c;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
 }
 
-.remove-btn {
-  background: #ddd;
-  border: none;
-  padding: 5px 12px;
-  border-radius: 4px;
-  cursor: pointer;
+.buy-btn:hover {
+    background: #ff6b6b;
 }
 </style>
 
-<div class="cart-wrapper">
-  <div class="cart-title">ショッピングカート</div>
-
-  <div class="cart-flex">
-
-    <!-- 左：商品一覧 -->
-    <div class="cart-item-box">
-
-      <?php if (empty($_SESSION['cart'])): ?>
-        <p>カートに商品がありません。</p>
-
-      <?php else: ?>
-        <?php foreach ($_SESSION['cart'] as $id => $qty): ?>
-          <?php if (!isset($products[$id])) continue; ?>
-          <?php $item = $products[$id]; ?>
-
-          <div class="cart-item">
-            <img src="<?= htmlspecialchars($item['img']) ?>" alt="商品画像">
-
-            <div class="cart-item-info">
-              <div class="cart-item-name"><?= htmlspecialchars($item['name']) ?></div>
-              <p>在庫：<?= $item['stock'] ? 'あり' : 'なし' ?></p>
-              <p>お届け予定：〇月〇日〜〇月〇日</p>
-            </div>
-
-            <div style="text-align:right;">
-              <div style="font-size: 18px; font-weight:bold;">
-                <?= number_format($item['price'] * $qty) ?>円
-              </div>
-
-              <div style="margin-top:10px;">
-                <select id="qty-<?= $id ?>" onchange="updateQty(<?= $id ?>)">
-                  <?php for ($i = 1; $i <= 10; $i++): ?>
-                    <option value="<?= $i ?>" <?= $i == $qty ? 'selected' : '' ?>><?= $i ?></option>
-                  <?php endfor; ?>
-                </select>
-
-                <form method="post" style="display:inline;">
-                  <button type="submit" name="remove" value="<?= $id ?>" class="remove-btn">
-                    削除する
-                  </button>
-                </form>
-              </div>
-            </div>
-
-          </div>
-
-        <?php endforeach; ?>
-      <?php endif; ?>
-
-    </div>
-
-    <!-- 右：合計 -->
-    <div class="cart-right">
-      <p>小計：<?= number_format($subtotal) ?>円</p>
-      <p>送料：<?= number_format($shipping) ?>円</p>
-      <p style="font-weight:bold;">合計：<?= number_format($total) ?>円</p>
-
-      <button class="buy-btn">購入に進む</button>
-    </div>
-
-  </div>
-</div>
-
-<script>
-function updateQty(id) {
-  const qty = document.getElementById("qty-" + id).value;
-  const fd = new FormData();
-  fd.append("update", 1);
-  fd.append("id", id);
-  fd.append("qty", qty);
-
-  fetch("cart.php", { method: "POST", body: fd })
-    .then(() => location.reload());
-}
-</script>
-
-<?php include __DIR__ . 'footer.php'; ?>
+<?php include __DIR__ . '/footer.php'; ?>
+</body>    
+</html>

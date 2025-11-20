@@ -39,25 +39,14 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
 
 if ($product) {
     echo '<div class="product">';
-    // 画像カラムがあれば優先、なければ product_id ベースのファイル名を使う
-    $imgSrc = '';
-    if (!empty($product['image'])) {
-        if (strpos($product['image'], '/') !== false) {
-            $imgSrc = $product['image'];
-        } else {
-            $imgSrc = 'image/' . rawurlencode($product['image']);
-        }
-    } else {
-        $imgSrc = 'image/' . rawurlencode($product['product_id']) . '.png';
-    }
-    echo '<p><img alt="image" src="' . $imgSrc . '"></p>';
+    echo '<p><img alt="image" src="image/'. $product['product_id'].'.png"></p>';
     echo '<form action="cart.php" method="post">';
     echo '<h3>'.$product['name'].'</h3>';
-    echo '<p>￥'.$product['price'].'<small>税込み</small></p>';
+    echo '<p class="price">￥'.$product['price'].'<small>税込み</small></p>';
 
     echo '<p class="average-rating">';
     echo '<span class="stars">'.$starsDisplay.'</span> ';
-    echo '<span class="review-count">(<small>'.$reviewCount.'</small>件のレビュー)</span>';
+    echo '<span class="review-count"><small>('.$reviewCount.'件のレビュー)</small></span>';
     echo '</p>';
 
     if ($product['stock'] > 0) {
@@ -130,5 +119,6 @@ if ($product) {
 ?>
 </div>
 <?php require __DIR__ . '/style.php'; ?>
+<?php require __DIR__ . '/footer.php'; ?>
 </body>
 </html>
