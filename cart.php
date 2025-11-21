@@ -2,6 +2,8 @@
 session_start();
 require_once __DIR__ . '/db-connect.php';
 
+$pdo = new PDO($connect, USER, PASS);
+
 if (!empty($_POST['id']) && !empty($_POST['name']) && !empty($_POST['price']) && !empty($_POST['count'])) {
     $id = $_POST['id'];
     $name = $_POST['name'];
@@ -17,7 +19,6 @@ if (!empty($_POST['id']) && !empty($_POST['name']) && !empty($_POST['price']) &&
             'name' => $name,
             'price' => $price,
             'count' => $count,
-            'stock' => $stock,
         ];
     }
 
@@ -167,6 +168,14 @@ $total = $subtotal + $shipping;
     justify-content: space-between;
     flex: 1;
     padding: 5px;
+}
+
+.stock-ok {
+    color: #6affb2ff;
+}
+
+.stock-ng {
+    color: #ff0000;
 }
 
 .cart-info .date {

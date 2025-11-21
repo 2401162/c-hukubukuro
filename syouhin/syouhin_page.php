@@ -57,7 +57,7 @@ if ($product) {
         echo '</select>';
         echo '<p><input type="submit" value="カートに追加"></p>';
     } else {
-        echo '<p style="color:green;">在庫切れ</p>';
+        echo '<p style="color:red;">在庫切れ</p>';
     }
 
     echo '<input type="hidden" name="id" value="'.$product['product_id'].'">';

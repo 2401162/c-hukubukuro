@@ -15,7 +15,6 @@ if (session_status() === PHP_SESSION_NONE) {
 $isLoggedIn = !empty($_SESSION['customer']);
 
 // ✅ マイページの遷移先を決定
-$myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
 $myPageUrl = $isLoggedIn ? "mypage/mypage.php" : "rogin-input.php";
 ?>
 <!-- Icons: using inline SVG to avoid external CDN/tracking issues -->
@@ -132,7 +131,6 @@ $myPageUrl = $isLoggedIn ? "mypage/mypage.php" : "rogin-input.php";
     </a>
 
     <!-- カート -->
-    <a href="/cart.php" aria-label="カート">
     <a href="cart.php" aria-label="カート">
       <!-- Cart icon (inline SVG) -->
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
