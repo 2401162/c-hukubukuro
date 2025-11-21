@@ -83,7 +83,9 @@ function prepareSubmit(e){
   // 送信続行
 }
 </script>
-
+<form action="admin-top.php" method="get">
+    <button type="submit" class="top-button">トップページへ</button>
+</form>
 <?php require_once 'admin-footer.php'; ?>
 </body>
 </html>
