@@ -63,6 +63,7 @@ try {
 }
 
 if ($didDbAuth) {
+    $to = $redirect !== '' ? $redirect : 'mypage/mypage.php';
     header('Location: ' . $to);
     exit;
 }
@@ -79,6 +80,7 @@ if ($email === $DEMO_USER['email'] && $password === $DEMO_USER['password']) {
         'email'    => $DEMO_USER['email'],
         'username' => $DEMO_USER['username'],
     ];
+    $to = $redirect !== '' ? $redirect : 'mypage/mypage.php';
     header('Location: ' . $to);
     exit;
 }
