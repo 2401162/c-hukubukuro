@@ -1,23 +1,19 @@
 <?php
 // セッション開始（未開始なら開始）
-// 注意: 他ファイルで既に出力が始まっていると headers が送信済みになり
-// session_start() が警告を出すため、安全に開始できるか確認してから呼ぶ。
 if (session_status() === PHP_SESSION_NONE) {
   if (!headers_sent()) {
     session_start();
   } else {
-    // ヘッダー送信後にセッションを開始できないためログに記録（警告は出さない）
     error_log('Session not started in header.php: headers already sent');
   }
 }
 
-// ✅ ログイン判定（あなたのセッションキーに合わせてあります）
+// ログイン判定
 $isLoggedIn = !empty($_SESSION['customer']);
 
-// ✅ マイページの遷移先を決定
-$myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
+// マイページの遷移先を決定（syouhinフォルダから見た相対パス）
+$myPageUrl = $isLoggedIn ? "../mypage/mypage.php" : "../rogin-input.php";
 ?>
-<!-- Icons: using inline SVG to avoid external CDN/tracking issues -->
 
 <style>
   /* ヘッダー全体 */
@@ -75,7 +71,6 @@ $myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
     text-decoration: none;
   }
 
-  /* SVG アイコンのサイズを明示して大きく表示する（Font Awesome の代替） */
   .site-header .actions a svg {
     width: 36px;
     height: 36px;
@@ -107,11 +102,10 @@ $myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
 <header class="site-header">
   <!-- 左：ロゴ -->
   <div class="brand">
-    <a href="top.php" aria-label="ホームへ">
+    <a href="../top.php" aria-label="ホームへ">
       <?php
-        // 相対パスで画像を指定（ホスティングがサブディレクトリでも動くように）
         $logoFile = 'ChatGPT Image 2025年11月5日 11_38_53.png';
-        $logoPath = 'image/' . rawurlencode($logoFile);
+        $logoPath = '../image/' . rawurlencode($logoFile);
       ?>
       <img src="<?= htmlspecialchars($logoPath, ENT_QUOTES, 'UTF-8') ?>" alt="サイトロゴ" class="site-logo">
     </a>
@@ -120,10 +114,8 @@ $myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
 
   <!-- 右アイコン -->
   <nav class="actions">
-
-    <!-- ✅ マイページ（ログインしてない場合はログインページへ） -->
+    <!-- マイページ -->
     <a href="<?= htmlspecialchars($myPageUrl, ENT_QUOTES, 'UTF-8') ?>" aria-label="マイページ">
-      <!-- User icon (inline SVG) -->
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
         <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="#fff"/>
         <path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8v1H4v-1z" fill="#fff"/>
@@ -131,8 +123,7 @@ $myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
     </a>
 
     <!-- カート -->
-    <a href="/cart.php" aria-label="カート">
-      <!-- Cart icon (inline SVG) -->
+    <a href="../cart.php" aria-label="カート">
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
         <path d="M7 4h-2l-1 2v2h2l3.6 7.59-1.35 2.45C8.89 18.76 9.5 20 11 20h8v-2h-7.42c-.14 0-.25-.11-.25-.25l.03-.12L12.1 15h5.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49-.02-.02c.07-.14.08-.3.08-.46 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59L6.5 16h12.02" fill="#fff"/>
       </svg>
@@ -145,4 +136,3 @@ $myPageUrl = $isLoggedIn ? "/mypage.php" : "/rogin-input.php";
     </a>
   </nav>
 </header>
-
