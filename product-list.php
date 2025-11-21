@@ -32,10 +32,10 @@ try {
       p.price,
       p.description,
       p.stock,
-      COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg_rating,
-      COUNT(r.review_id) AS review_count,
-      COALESCE(SUM(oi.quantity), 0) AS total_sold,
-      CASE WHEN p.product_id IN (SELECT product_id FROM product WHERE is_active = 1 LIMIT 5) THEN 1 ELSE 0 END AS reco
+      COALESCE(ROUND(AVG(DISTINCT r.rating), 1), 0) AS avg_rating,
+      COUNT(DISTINCT r.review_id) AS review_count,
+      COALESCE(SUM(DISTINCT oi.order_item_id), 0) AS total_sold,
+      0 AS reco
     FROM product p
     LEFT JOIN order_item oi ON oi.product_id = p.product_id
     LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1
@@ -200,7 +200,7 @@ function renderPage(page=1){
     // 画像が無ければプレースホルダーを表示（onerror でも表示）
     const imgSrc = p.image || '';
     const thumbHtml = imgSrc 
-      ? `<img class="thumb" src="${escapeAttr(imgSrc)}" alt="${escapeHtml(p.name)}" onerror="this.outerHTML='<div style=\\"background:#f0f0f0;width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;\\"><span>画像未設定</span></div>'" />`
+      ? `<img class="thumb" src="${escapeAttr(imgSrc)}" alt="${escapeHtml(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><div style="background:#f0f0f0;width:100%;aspect-ratio:1/1;display:none;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;"><span>画像未設定</span></div>`
       : `<div style="background:#f0f0f0;width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;"><span>画像未設定</span></div>`;
     return `
     <a class="card" href="product-detail.php?id=${p.id}" aria-label="${escapeHtml(p.name)}の詳細へ">
