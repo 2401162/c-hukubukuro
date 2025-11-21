@@ -29,7 +29,6 @@ try {
     SELECT 
       p.product_id AS id,
       p.name,
-      p.image_path AS image,
       p.price,
       p.description,
       p.stock,
@@ -41,7 +40,7 @@ try {
     LEFT JOIN order_item oi ON oi.product_id = p.product_id
     LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1
     WHERE p.is_active = 1
-    GROUP BY p.product_id, p.name, p.price, p.description, p.stock, p.image_path
+    GROUP BY p.product_id, p.name, p.price, p.description, p.stock
   ";
     
     if ($sort === 'recommend') {
@@ -52,39 +51,13 @@ try {
         $query .= " ORDER BY p.product_id DESC";
     }
     
-    try {
-      $stmt = $pdo->prepare($query);
-      $stmt->execute();
-      $products = $stmt->fetchAll();
-    } catch (PDOException $e) {
-      // カラムが存在しない等のエラーであれば image を外したクエリで再試行
-      if (stripos($e->getMessage(), 'unknown column') !== false || stripos($e->getMessage(), '1054') !== false) {
-        error_log('Product query: image column missing, retrying without image');
-          // image カラムを除いたクエリを作り直す
-        $queryNoImage = str_replace('      p.image_path AS image,\n', '', $query);
-        $queryNoImage = str_replace(', p.image_path', '', $queryNoImage);
-        $queryNoImage = str_replace(', p.image_path', '', $queryNoImage);
-        $queryNoImage = str_replace('p.image_path', '', $queryNoImage);
-        // GROUP BY から p.image_path を削除
-        $queryNoImage = str_ireplace(', p.image_path', '', $queryNoImage);
-        try {
-          $stmt = $pdo->prepare($queryNoImage);
-          $stmt->execute();
-          $products = $stmt->fetchAll();
-        } catch (PDOException $e2) {
-          throw $e2; // 元の catch に任せる
-        }
-      } else {
-        throw $e;
-      }
-    }
+    $stmt = $pdo->prepare($query);
+    $stmt->execute();
+    $products = $stmt->fetchAll();
     
-    // 各商品に画像パス付与（DBの image_path（alias image）を優先、無ければ空）
+    // 各商品に画像パスを付与（image/[product_id].png形式）
     foreach ($products as &$p) {
-      // DB に image_path（uploads/... など）があればそのまま使う。無ければ空にしてクライアント側でプレースホルダー表示
-      if (empty($p['image'])) {
-        $p['image'] = '';
-      }
+      $p['image'] = 'image/' . $p['id'] . '.png';
     }
     unset($p);
     
@@ -113,10 +86,8 @@ if (empty($products)) {
     if (!empty($fb)) {
       $products = $fb;
       foreach ($products as &$p) {
-        // image_path が無ければ空に設定してクライアント側でプレースホルダー表示
-        if (empty($p['image'])) {
-            $p['image'] = '';
-        }
+        // 画像パスを付与（image/[product_id].png形式）
+        $p['image'] = 'image/' . $p['id'] . '.png';
       }
       unset($p);
       $usedFallback = true;
