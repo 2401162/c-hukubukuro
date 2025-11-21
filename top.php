@@ -1,3 +1,4 @@
+<?php require 'header.php' ?>
 <?php
 $recommend = [
   ["name" => "お菓子福袋", "price" => 1200, "img" => "img/snack1.jpg"],
@@ -24,13 +25,7 @@ $ranking = [
 </head>
 <body>
 
-  <header>
-    <div class="logo">福袋EC</div>
-    <div class="icons">
-      <a href="cart.php" aria-label="カート"><i class="fas fa-shopping-cart"></i></a>
-      <a href="mypage.php" aria-label="マイページ"><i class="fas fa-user"></i></a>
-    </div>
-  </header>
+  
 
   <div class="banner" role="img" aria-label="セールバナー"></div>
 
@@ -106,3 +101,4 @@ $ranking = [
 
 </body>
 </html>
+<?php require 'footer.php' ?>

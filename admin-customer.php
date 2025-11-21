@@ -1,5 +1,5 @@
 <?php
-session_start();
+require 'admin-auth.php';
 require 'db-connect.php';
 require 'admin-header.php';
 require 'admin-menu.php';
