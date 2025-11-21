@@ -202,8 +202,30 @@ if ($product && !empty($product['image'])) {
 
     <script>
         function addToCart(productId) {
-            // TODO: カートに追加する機能を実装
-            alert('カートに追加しました（開発中）');
+            // カートに追加
+            fetch('cart.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'action=add&product_id=' + productId + '&quantity=1'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('カートに追加しました');
+                    // カートページに遷移するか確認
+                    if (confirm('カートを確認しますか？')) {
+                        window.location.href = 'cart.php';
+                    }
+                } else {
+                    alert(data.message || 'カートに追加できませんでした');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('エラーが発生しました');
+            });
         }
     </script>
 
