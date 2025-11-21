@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'db-connect.php';
 
 $name        = $_POST['name']        ?? '';
 $tel         = $_POST['tel']         ?? '';
@@ -13,6 +14,48 @@ $payment_method = $_POST['payment_method'] ?? '';
 
 $address = $prefecture; // 必要なら市区町村など足してOK
 
+// カート内容を取得
+$customer_id = $_SESSION['customer']['customer_id'] ?? null;
+$cart_items = [];
+$subtotal = 0;
+
+try {
+    $pdo = new PDO($connect, USER, PASS, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
+    
+    if ($customer_id) {
+        // DBから取得
+        $stmt = $pdo->prepare("
+            SELECT ci.cart_item_id, ci.product_id, ci.quantity, ci.unit_price_snapshot,
+                   p.name, p.price, p.stock
+            FROM cart c
+            JOIN cart_item ci ON c.cart_id = ci.cart_id
+            JOIN product p ON ci.product_id = p.product_id
+            WHERE c.customer_id = ? AND p.is_active = 1
+            ORDER BY ci.created_at DESC
+        ");
+        $stmt->execute([$customer_id]);
+        $cart_items = $stmt->fetchAll();
+    } else {
+        // セッションから取得
+        if (!empty($_SESSION['cart'])) {
+            foreach ($_SESSION['cart'] as $item) {
+                $cart_items[] = $item;
+            }
+        }
+    }
+    
+    foreach ($cart_items as $item) {
+        $subtotal += $item['price'] * $item['quantity'];
+    }
+} catch (PDOException $e) {
+    error_log("Order confirm DB Error: " . $e->getMessage());
+}
+
+$shipping = $subtotal > 0 ? 500 : 0;
+$total = $subtotal + $shipping;
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -132,29 +175,30 @@ $address = $prefecture; // 必要なら市区町村など足してOK
       <input type="hidden" name="destination" value="<?= htmlspecialchars($destination, ENT_QUOTES, 'UTF-8') ?>">
       <input type="hidden" name="card_number" value="<?= htmlspecialchars($card_number, ENT_QUOTES, 'UTF-8') ?>">
       <input type="hidden" name="payment_method" value="<?= htmlspecialchars($payment_method, ENT_QUOTES, 'UTF-8') ?>">
+      <input type="hidden" name="total_amount" value="<?= $total ?>">
 
       <div class="confirm-block">
         <div class="confirm-title">入力内容確認</div>
         <table class="confirm-table">
           <tr>
             <th>氏名</th>
-            <td><?= htmlspecialchars($name !== '' ? $name : '〇〇〇〇〇', ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($name !== '' ? $name : '未入力', ENT_QUOTES, 'UTF-8') ?></td>
           </tr>
           <tr>
             <th>電話番号</th>
-            <td><?= htmlspecialchars($tel !== '' ? $tel : '〇〇〇〇〇', ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($tel !== '' ? $tel : '未入力', ENT_QUOTES, 'UTF-8') ?></td>
           </tr>
           <tr>
             <th>メールアドレス</th>
-            <td><?= htmlspecialchars($email !== '' ? $email : '〇〇〇〇〇', ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($email !== '' ? $email : '未入力', ENT_QUOTES, 'UTF-8') ?></td>
           </tr>
           <tr>
             <th>郵便番号</th>
-            <td><?= htmlspecialchars(($postal1 || $postal2) ? $postal1 . '-' . $postal2 : '〇〇〇〇〇', ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars(($postal1 || $postal2) ? $postal1 . '-' . $postal2 : '未入力', ENT_QUOTES, 'UTF-8') ?></td>
           </tr>
           <tr>
             <th>住所</th>
-            <td><?= htmlspecialchars($address !== '' ? $address : '〇〇〇〇〇', ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($address !== '' ? $address : '未入力', ENT_QUOTES, 'UTF-8') ?></td>
           </tr>
           <tr>
             <th>お支払方法</th>
@@ -167,20 +211,25 @@ $address = $prefecture; // 必要なら市区町村など足してOK
         <div class="confirm-title">購入内容確認</div>
 
         <div class="purchase-section-title">【商品】</div>
-        <div class="purchase-row">〇〇〇〇福袋　　数量：1</div>
-        <div class="purchase-row">〇〇〇〇福袋　　数量：1</div>
+        <?php foreach ($cart_items as $item): ?>
+          <div class="purchase-row">
+            <?= htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8') ?>　　
+            数量：<?= htmlspecialchars($item['quantity'], ENT_QUOTES, 'UTF-8') ?>　　
+            ¥<?= number_format($item['price'] * $item['quantity']) ?>
+          </div>
+        <?php endforeach; ?>
 
         <div class="purchase-section-title" style="margin-top:10px;">【送料】</div>
-        <div class="purchase-row">〇〇〇〇円</div>
+        <div class="purchase-row">¥<?= number_format($shipping) ?></div>
 
         <div class="purchase-total">
-          合計：<span class="amount">〇〇〇〇円</span>
+          合計：<span class="amount">¥<?= number_format($total) ?></span>
         </div>
       </div>
 
       <div class="confirm-buttons">
         <button type="button" class="btn-back" onclick="history.back()">戻る</button>
-        <button type="submit" class="btn-complete">完了</button>
+        <button type="submit" class="btn-complete">購入を確定する</button>
       </div>
     </form>
   </div>
