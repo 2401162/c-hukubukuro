@@ -25,13 +25,7 @@ $ranking = [
 </head>
 <body>
 
-  <header>
-    <div class="logo">福袋EC</div>
-    <div class="icons">
-      <a href="cart.php" aria-label="カート"><i class="fas fa-shopping-cart"></i></a>
-      <a href="mypage.php" aria-label="マイページ"><i class="fas fa-user"></i></a>
-    </div>
-  </header>
+  
 
   <div class="banner" role="img" aria-label="セールバナー"></div>
 
