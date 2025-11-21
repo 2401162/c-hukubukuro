@@ -1,5 +1,5 @@
 <?php
-// admin-recommend.php
+require 'admin-auth.php';
 require_once 'admin-db-connect.php';
 require_once 'admin-header.php';
 require 'admin-menu.php';

@@ -1,3 +1,4 @@
+<?php require 'header.php' ?>
 <?php
 $recommend = [
   ["name" => "お菓子福袋", "price" => 1200, "img" => "img/snack1.jpg"],
@@ -106,3 +107,4 @@ $ranking = [
 
 </body>
 </html>
+<?php require 'footer.php' ?>
