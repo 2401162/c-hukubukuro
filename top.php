@@ -1,18 +1,75 @@
 <?php require 'header.php' ?>
 <?php
-$recommend = [
-  ["name" => "お菓子福袋", "price" => 1200, "img" => "img/snack1.jpg"],
-  ["name" => "ゲーム福袋", "price" => 2500, "img" => "img/game1.jpg"],
-  ["name" => "ぬいぐるみ福袋", "price" => 1800, "img" => "img/toy1.jpg"],
-  ["name" => "文房具福袋", "price" => 900, "img" => "img/stationery1.jpg"]
-];
+require 'header.php';
+require_once __DIR__ . '/db-connect.php';
 
-$ranking = [
-  ["name" => "人気お菓子福袋", "price" => 1300, "img" => "img/snack2.jpg"],
-  ["name" => "ゲームグッズ福袋", "price" => 2700, "img" => "img/game2.jpg"],
-  ["name" => "ぬいぐるみセット", "price" => 1900, "img" => "img/toy2.jpg"],
-  ["name" => "豪華文房具福袋", "price" => 1100, "img" => "img/stationery2.jpg"]
-];
+try {
+  $pdo = new PDO($connect, USER, PASS, [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+  ]);
+} catch (PDOException $e) {
+  echo '<p>DB接続エラー</p>';
+  exit;
+}
+
+// おすすめ：4件だけ取得
+$recommend_stmt = $pdo->prepare("
+  SELECT p.*
+  FROM recommended r
+  JOIN product p ON r.product_id = p.product_id
+  WHERE p.is_active = 1
+  ORDER BY r.sort_order ASC
+  LIMIT 4
+");
+$recommend_stmt->execute();
+$recommend = $recommend_stmt->fetchAll();
+
+// ランキング：新着順で4件
+$ranking_stmt = $pdo->prepare("
+  SELECT * FROM product
+  WHERE is_active = 1
+  ORDER BY created_at DESC
+  LIMIT 4
+");
+$ranking_stmt->execute();
+$ranking = $ranking_stmt->fetchAll();
+
+// 画像パスを決めるヘルパー
+function resolve_image_path(array $item): string {
+  $img = $item['image_path'] ?? '';
+  if (!$img) return 'img/noimage.png';
+  // 絶対URLまたは先頭が / の場合はそのまま
+  if (preg_match('#^(https?://|//|/)#i', $img)) return $img;
+  // 既に uploads/ が含まれる場合はそのまま
+  if (strpos($img, 'uploads/') === 0) return $img;
+  return 'uploads/' . ltrim($img, '/');
+}
+
+// 出力関数（リンクを product-detail.php に接続）
+function renderProductList($items) {
+  foreach ($items as $item) {
+    $image = htmlspecialchars(resolve_image_path($item), ENT_QUOTES, 'UTF-8');
+    $name = htmlspecialchars($item['name'] ?? '商品名不明', ENT_QUOTES, 'UTF-8');
+    $price = isset($item['price']) ? number_format((int)$item['price']) : '-';
+    $stock = isset($item['stock']) ? (int)$item['stock'] : 0;
+    $id = (int)($item['product_id'] ?? 0);
+    ?>
+    <div class="product">
+      <a href="product-detail.php?id=<?= $id ?>" style="display:block">
+        <img src="<?= $image ?>" alt="<?= $name ?>">
+      </a>
+      <p class="product-name"><a href="product-detail.php?id=<?= $id ?>"><?= $name ?></a></p>
+      <p class="product-price">¥<?= $price ?></p>
+      <?php if ($stock > 0): ?>
+        <button class="cart-btn" data-id="<?= $id ?>">カートに追加</button>
+      <?php else: ?>
+        <span class="soldout">売り切れ</span>
+      <?php endif; ?>
+    </div>
+    <?php
+  }
+}
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -20,8 +77,21 @@ $ranking = [
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>福袋EC トップ</title>
-  <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+  <style>
+    .product-list { display:flex; flex-wrap:wrap; justify-content:center; gap:24px; padding:20px 0; }
+    .product { width:220px; background:#fff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08); overflow:hidden; text-align:center; transition:transform .2s; }
+    .product:hover{ transform:translateY(-4px); }
+    .product img{ width:100%; height:160px; object-fit:cover; display:block; }
+    .product-name{ font-size:16px; font-weight:700; margin:12px 8px 4px; color:#333; }
+    .product-price{ font-size:15px; color:#e60033; margin-bottom:12px; }
+    .cart-btn, .soldout { display:inline-block; padding:8px 16px; font-size:14px; border-radius:20px; margin-bottom:16px; }
+    .cart-btn{ background:#ff6600; color:#fff; border:none; cursor:pointer; }
+    .cart-btn:hover{ background:#e65c00; }
+    .soldout{ background:#ccc; color:#666; }
+    .section-top{ display:flex; justify-content:space-between; align-items:center; margin:0 20px; }
+    .section-top h2{ font-size:20px; margin:0; }
+  </style>
 </head>
 <body>
 
@@ -30,75 +100,32 @@ $ranking = [
   <div class="banner" role="img" aria-label="セールバナー"></div>
 
   <main>
-    <!-- おすすめ -->
     <section class="section">
       <div class="product-section">
         <div class="section-top">
           <h2>おすすめ</h2>
-          <a href="product-list.php" class="list-link">一覧へ <i class="fas fa-chevron-right small-icon" aria-hidden="true"></i></a>
+          <a href="product-list.php" class="list-link">一覧へ</a>
         </div>
-
         <div class="product-list">
-          <?php foreach($recommend as $item): ?>
-            <div class="product">
-              <img src="<?= htmlspecialchars($item['img'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($item['name'], ENT_QUOTES) ?>">
-              <p class="product-name"><?= htmlspecialchars($item['name'], ENT_QUOTES) ?></p>
-              <p class="product-price">¥<?= number_format($item['price']) ?></p>
-              <button class="cart-btn" type="button">カートに追加</button>
-            </div>
-          <?php endforeach; ?>
+          <?php renderProductList($recommend); ?>
         </div>
       </div>
     </section>
 
-    <!-- ランキング -->
     <section class="section">
       <div class="product-section">
         <div class="section-top">
           <h2>ランキング</h2>
-          <a href="product-list.php" class="list-link">一覧へ <i class="fas fa-chevron-right small-icon" aria-hidden="true"></i></a>
+          <a href="product-list.php" class="list-link">一覧へ</a>
         </div>
-
         <div class="product-list">
-          <?php foreach($ranking as $item): ?>
-            <div class="product">
-              <img src="<?= htmlspecialchars($item['img'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($item['name'], ENT_QUOTES) ?>">
-              <p class="product-name"><?= htmlspecialchars($item['name'], ENT_QUOTES) ?></p>
-              <p class="product-price">¥<?= number_format($item['price']) ?></p>
-              <button class="cart-btn" type="button">カートに追加</button>
-            </div>
-          <?php endforeach; ?>
+          <?php renderProductList($ranking); ?>
         </div>
       </div>
-    </section>
-
-    <!-- さがす -->
-    <section class="search-section">
-      <h2>さがす</h2>
-
-      <div class="search-group">
-        <p>ジャンル</p>
-        <div class="tags">
-          <div class="tag">お菓子</div>
-          <div class="tag">ゲーム福袋</div>
-          <div class="tag">ぬいぐるみ</div>
-        </div>
-      </div>
-
-      <div class="search-group">
-        <p>価格</p>
-        <div class="tags">
-          <div class="tag">〜999</div>
-          <div class="tag">1000〜2000</div>
-          <div class="tag">2000〜3000</div>
-          <div class="tag">3000〜5000</div>
-        </div>
-      </div>
-
-      <button class="search-btn" type="button">さがす</button>
     </section>
   </main>
 
+<?php require 'footer.php'; ?>
 </body>
 </html>
 <?php require 'footer.php' ?>
