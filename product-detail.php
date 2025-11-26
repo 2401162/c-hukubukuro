@@ -24,34 +24,16 @@ if ($product_id <= 0) {
         // product テーブル: product_id (PK), jenre_id, name, price, stock, description, is_active
     $stmt = $pdo->prepare(
         "SELECT p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name,
-            p.image_path AS image,
             COUNT(r.review_id) AS review_count, ROUND(AVG(r.rating), 1) AS avg_rating
          FROM product p
          LEFT JOIN genre g ON p.jenre_id = g.genre_id
          LEFT JOIN order_item oi ON oi.product_id = p.product_id
          LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1
          WHERE p.product_id = :product_id AND p.is_active = 1
-            GROUP BY p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name, p.image_path"
+            GROUP BY p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name"
     );
-        try {
-            $stmt->execute([':product_id' => $product_id]);
-            $product = $stmt->fetch();
-        } catch (PDOException $e) {
-            // image カラムが存在しない可能性があるので、image を外したクエリで再試行
-            if (stripos($e->getMessage(), 'unknown column') !== false || stripos($e->getMessage(), '1054') !== false) {
-                error_log('Product detail query: image column missing, retrying without image');
-                $queryNoImage = str_replace("\n            p.image_path AS image,", "",
-                    "SELECT p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name,\n            p.image_path AS image,\n            COUNT(r.review_id) AS review_count, ROUND(AVG(r.rating), 1) AS avg_rating\n         FROM product p\n         LEFT JOIN genre g ON p.jenre_id = g.genre_id\n         LEFT JOIN order_item oi ON oi.product_id = p.product_id\n         LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1\n         WHERE p.product_id = :product_id AND p.is_active = 1\n            GROUP BY p.product_id, p.name, p.price, p.stock, p.description, p.is_active, g.genre_name, p.image_path"
-                );
-                // 最後の GROUP BY の p.image 部分を削る
-                $queryNoImage = str_ireplace(', p.image_path', '', $queryNoImage);
-                $stmt = $pdo->prepare($queryNoImage);
-                $stmt->execute([':product_id' => $product_id]);
-                $product = $stmt->fetch();
-            } else {
-                throw $e;
-            }
-        }
+        $stmt->execute([':product_id' => $product_id]);
+        $product = $stmt->fetch();
         
         if (!$product) {
             $error_message = '商品が見つかりません。';
@@ -77,11 +59,10 @@ if ($product_id <= 0) {
 
 function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 
-// DB の image_path（alias image）を優先して使用
-// 無ければ空に設定（プレースホルダーを表示）
+// 画像パスを生成（image/[product_id].png形式）
 $image_path = '';
-if ($product && !empty($product['image'])) {
-    $image_path = $product['image']; // uploads/... などそのまま使用
+if ($product) {
+    $image_path = 'image/' . $product['product_id'] . '.png';
 }
 ?>
 <!DOCTYPE html>
@@ -202,8 +183,30 @@ if ($product && !empty($product['image'])) {
 
     <script>
         function addToCart(productId) {
-            // TODO: カートに追加する機能を実装
-            alert('カートに追加しました（開発中）');
+            // カートに追加
+            fetch('cart.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'action=add&product_id=' + productId + '&quantity=1'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('カートに追加しました');
+                    // カートページに遷移するか確認
+                    if (confirm('カートを確認しますか？')) {
+                        window.location.href = 'cart.php';
+                    }
+                } else {
+                    alert(data.message || 'カートに追加できませんでした');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('エラーが発生しました');
+            });
         }
     </script>
 

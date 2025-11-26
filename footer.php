@@ -15,8 +15,20 @@
 </footer>
 
 <style>
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 .site-footer{
-  background:#ec4c4cff; color:#fff;
+  background:#000; 
+  color:#fff;
+  margin: 0;
   margin-top:auto;  /* ← .page が flex なので最下部へ押し出される */
 }
 .site-footer .footer-inner{
@@ -31,6 +43,9 @@
 
 @media (max-width:640px){
   .site-footer .footer-inner{ flex-direction:column; align-items:flex-start; }
+}
+main {
+  flex: 1;
 }
 </style>
 

@@ -1,5 +1,5 @@
 <?php session_start(); ?>
-<?php require __DIR__ . '/db-connect.php'; ?>
+<?php require __DIR__ . '/../db-connect.php'; ?>
 <?php require __DIR__ . '/login.php'; ?>
 
 <!DOCTYPE html>

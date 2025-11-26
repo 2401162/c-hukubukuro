@@ -29,19 +29,18 @@ try {
     SELECT 
       p.product_id AS id,
       p.name,
-      p.image_path AS image,
       p.price,
       p.description,
       p.stock,
-      COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg_rating,
-      COUNT(r.review_id) AS review_count,
-      COALESCE(SUM(oi.quantity), 0) AS total_sold,
-      CASE WHEN p.product_id IN (SELECT product_id FROM product WHERE is_active = 1 LIMIT 5) THEN 1 ELSE 0 END AS reco
+      COALESCE(ROUND(AVG(DISTINCT r.rating), 1), 0) AS avg_rating,
+      COUNT(DISTINCT r.review_id) AS review_count,
+      COALESCE(SUM(DISTINCT oi.order_item_id), 0) AS total_sold,
+      0 AS reco
     FROM product p
     LEFT JOIN order_item oi ON oi.product_id = p.product_id
     LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1
     WHERE p.is_active = 1
-    GROUP BY p.product_id, p.name, p.price, p.description, p.stock, p.image_path
+    GROUP BY p.product_id, p.name, p.price, p.description, p.stock
   ";
     
     if ($sort === 'recommend') {
@@ -52,39 +51,13 @@ try {
         $query .= " ORDER BY p.product_id DESC";
     }
     
-    try {
-      $stmt = $pdo->prepare($query);
-      $stmt->execute();
-      $products = $stmt->fetchAll();
-    } catch (PDOException $e) {
-      // カラムが存在しない等のエラーであれば image を外したクエリで再試行
-      if (stripos($e->getMessage(), 'unknown column') !== false || stripos($e->getMessage(), '1054') !== false) {
-        error_log('Product query: image column missing, retrying without image');
-          // image カラムを除いたクエリを作り直す
-        $queryNoImage = str_replace('      p.image_path AS image,\n', '', $query);
-        $queryNoImage = str_replace(', p.image_path', '', $queryNoImage);
-        $queryNoImage = str_replace(', p.image_path', '', $queryNoImage);
-        $queryNoImage = str_replace('p.image_path', '', $queryNoImage);
-        // GROUP BY から p.image_path を削除
-        $queryNoImage = str_ireplace(', p.image_path', '', $queryNoImage);
-        try {
-          $stmt = $pdo->prepare($queryNoImage);
-          $stmt->execute();
-          $products = $stmt->fetchAll();
-        } catch (PDOException $e2) {
-          throw $e2; // 元の catch に任せる
-        }
-      } else {
-        throw $e;
-      }
-    }
+    $stmt = $pdo->prepare($query);
+    $stmt->execute();
+    $products = $stmt->fetchAll();
     
-    // 各商品に画像パス付与（DBの image_path（alias image）を優先、無ければ空）
+    // 各商品に画像パスを付与（image/[product_id].png形式）
     foreach ($products as &$p) {
-      // DB に image_path（uploads/... など）があればそのまま使う。無ければ空にしてクライアント側でプレースホルダー表示
-      if (empty($p['image'])) {
-        $p['image'] = '';
-      }
+      $p['image'] = 'image/' . $p['id'] . '.png';
     }
     unset($p);
     
@@ -113,10 +86,8 @@ if (empty($products)) {
     if (!empty($fb)) {
       $products = $fb;
       foreach ($products as &$p) {
-        // image_path が無ければ空に設定してクライアント側でプレースホルダー表示
-        if (empty($p['image'])) {
-            $p['image'] = '';
-        }
+        // 画像パスを付与（image/[product_id].png形式）
+        $p['image'] = 'image/' . $p['id'] . '.png';
       }
       unset($p);
       $usedFallback = true;
@@ -229,7 +200,7 @@ function renderPage(page=1){
     // 画像が無ければプレースホルダーを表示（onerror でも表示）
     const imgSrc = p.image || '';
     const thumbHtml = imgSrc 
-      ? `<img class="thumb" src="${escapeAttr(imgSrc)}" alt="${escapeHtml(p.name)}" onerror="this.outerHTML='<div style=\\"background:#f0f0f0;width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;\\"><span>画像未設定</span></div>'" />`
+      ? `<img class="thumb" src="${escapeAttr(imgSrc)}" alt="${escapeHtml(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><div style="background:#f0f0f0;width:100%;aspect-ratio:1/1;display:none;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;"><span>画像未設定</span></div>`
       : `<div style="background:#f0f0f0;width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;"><span>画像未設定</span></div>`;
     return `
     <a class="card" href="product-detail.php?id=${p.id}" aria-label="${escapeHtml(p.name)}の詳細へ">

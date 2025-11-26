@@ -9,17 +9,14 @@ if (!$pdo || !$input || !isset($input['name'], $input['jenre_id'], $input['price
   exit;
 }
 
-$image_path = isset($input['image_path']) ? $input['image_path'] : null;
-
-$sql = $pdo->prepare('INSERT INTO product (jenre_id, name, price, stock, description, is_active, image_path) VALUES (?, ?, ?, ?, ?, ?, ?)');
+$sql = $pdo->prepare('INSERT INTO product (jenre_id, name, price, stock, description, is_active) VALUES (?, ?, ?, ?, ?, ?)');
 $success = $sql->execute([
   $input['jenre_id'],
   $input['name'],
   $input['price'],
   $input['stock'],
   $input['description'],
-  $input['is_active'],
-  $image_path
+  $input['is_active']
 ]);
 
 if ($success) {
