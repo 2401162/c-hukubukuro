@@ -15,7 +15,6 @@ h2 {
 /* 購入履歴コンテナ */
 .buy {
     display: flex;
-    justify-content: center;
     padding: 20px;
     margin-left: 20px;
     margin-right: 20px;
@@ -90,12 +89,13 @@ h2 {
 
 .right a {
     transition: .3s;
-    padding: 24px 48px;
-    border-radius: 5px;
+    margin-top: 10px;
+    padding: 8px 16px;
+    border-radius: 3px;
     background-color: #c9c9c9ff;
     text-decoration: none;
     color: #000000;
-    font-size: 10px;
+    font-size: 8px;  
 }
 
 .right a:hover {
