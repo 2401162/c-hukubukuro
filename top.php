@@ -35,14 +35,32 @@ $ranking_stmt = $pdo->prepare("
 $ranking_stmt->execute();
 $ranking = $ranking_stmt->fetchAll();
 
-// 画像パスを決めるヘルパー
 function resolve_image_path(array $item): string {
   $img = $item['image_path'] ?? '';
+
   if (!$img) return 'img/noimage.png';
-  // 絶対URLまたは先頭が / の場合はそのまま
-  if (preg_match('#^(https?://|//|/)#i', $img)) return $img;
-  // 既に uploads/ が含まれる場合はそのまま
-  if (strpos($img, 'uploads/') === 0) return $img;
+
+  // 絶対URL または / で始まる場合
+  if (preg_match('#^(https?://|//|/)#i', $img)) {
+      return $img;
+  }
+
+  // uploads を含んでいたらそのまま
+  if (strpos($img, 'uploads/') !== false) {
+      return $img;
+  }
+
+  // image/ から始まる（今回のあなたのデータ）
+  if (strpos($img, 'image/') === 0) {
+      return $img;
+  }
+
+  // img/ から始まる（noimage.png 対策）
+  if (strpos($img, 'img/') === 0) {
+      return $img;
+  }
+
+  // その他は uploads/ を付ける
   return 'uploads/' . ltrim($img, '/');
 }
 
