@@ -1,4 +1,4 @@
-<?php require 'header.php' ?>
+
 <?php
 require 'header.php';
 require_once __DIR__ . '/db-connect.php';
@@ -128,4 +128,4 @@ function renderProductList($items) {
 <?php require 'footer.php'; ?>
 </body>
 </html>
-<?php require 'footer.php' ?>
+
