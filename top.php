@@ -1,7 +1,5 @@
 <?php require 'header.php' ?>
-<?php
-require 'header.php';
-require_once __DIR__ . '/db-connect.php';
+<?php require_once __DIR__ . '/db-connect.php';
 
 try {
   $pdo = new PDO($connect, USER, PASS, [
@@ -56,10 +54,10 @@ function renderProductList($items) {
     $id = (int)($item['product_id'] ?? 0);
     ?>
     <div class="product">
-      <a href="product-detail.php?id=<?= $id ?>" style="display:block">
+      <a href="syouhin/syouhin_page.php?id=<?= $id ?>" style="display:block">
         <img src="<?= $image ?>" alt="<?= $name ?>">
       </a>
-      <p class="product-name"><a href="product-detail.php?id=<?= $id ?>"><?= $name ?></a></p>
+      <p class="product-name"><a href="syouhin/syouhin_page.php?id=<?= $id ?>"><?= $name ?></a></p>
       <p class="product-price">¥<?= $price ?></p>
       <?php if ($stock > 0): ?>
         <button class="cart-btn" data-id="<?= $id ?>">カートに追加</button>
@@ -128,4 +126,3 @@ function renderProductList($items) {
 <?php require 'footer.php'; ?>
 </body>
 </html>
-<?php require 'footer.php' ?>
