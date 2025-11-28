@@ -123,9 +123,31 @@ function renderProductList($items) {
         </div>
       </div>
     </section>
+
+    <section class="search-section">
+      <h2>さがす</h2>
+      <div class="search-group">
+        <p>ジャンル</p>
+        <div class="tags">
+          <div class="tag" data-q="お菓子">お菓子</div>
+          <div class="tag" data-q="ゲーム">ゲーム福袋</div>
+          <div class="tag" data-q="ぬいぐるみ">ぬいぐるみ</div>
+        </div>
+      </div>
+      <div class="search-group">
+        <p>価格</p>
+        <div class="tags">
+          <div class="tag" data-price="0-999">〜999</div>
+          <div class="tag" data-price="1000-2000">1000〜2000</div>
+          <div class="tag" data-price="2000-3000">2000〜3000</div>
+          <div class="tag" data-price="3000-5000">3000〜5000</div>
+        </div>
+      </div>
+      <button class="search-btn" type="button">さがす</button>
+    </section>
+
   </main>
 
-<?php require 'footer.php'; ?>
 </body>
 </html>
 <?php require 'footer.php' ?>
