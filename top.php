@@ -125,4 +125,9 @@ function renderProductList($items) {
 
 <?php require 'footer.php'; ?>
 </body>
+<<<<<<< HEAD
 </html>
+=======
+</html>
+
+>>>>>>> 8b65446df7a4c54c8a0ceadd914236ea4d55a169
