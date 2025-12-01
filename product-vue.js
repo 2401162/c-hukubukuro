@@ -1,3 +1,4 @@
+// ...existing code...
 new Vue({
   el: '#app',
   data: {
@@ -81,7 +82,6 @@ new Vue({
       };
       reader.readAsDataURL(file);
     },
-
     uploadFile(file) {
       const fd = new FormData();
       fd.append('image', file);
@@ -92,11 +92,9 @@ new Vue({
           throw new Error(json && json.error ? json.error : 'アップロード失敗');
         });
     },
-
     showImageModal(item) {
       this.imageModal = item;
     },
-
     addProduct() {
       const doInsert = (imagePath) => {
         const payload = {
@@ -144,7 +142,6 @@ new Vue({
           .catch(err => { console.error(err); alert('通信エラー'); });
       }
     },
-
     updateProduct() {
       if (!this.editProduct) return;
       const proceedUpdate = (imagePath) => {
@@ -200,15 +197,14 @@ new Vue({
           .catch(err => { console.error(err); alert('通信エラー'); });
       }
     },
-
     startEdit(item) {
       this.editProduct = Object.assign({}, item);
       this.editProduct.preview = null;
       this.editProduct.imageFile = null;
     },
-
     clearSearch() {
       this.searchQuery = '';
     }
   }
 });
+// ...existing code...
