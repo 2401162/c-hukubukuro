@@ -1,4 +1,3 @@
-<?php require 'header.php' ?>
 <?php
 require 'header.php';
 require_once __DIR__ . '/db-connect.php';
