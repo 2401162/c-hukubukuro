@@ -1,5 +1,4 @@
-<?php require_once __DIR__ . '/login.php'; ?>
-<?php require_once __DIR__ . '/db-connect.php'; ?>
+<?php require_once __DIR__ . '/../db-connect.php'; ?>
 <?php
 try {
     $pdo = new PDO($connect, USER, PASS, [
@@ -53,16 +52,17 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>福袋サイト - 商品詳細</title>
+    <title>福袋サイト  商品詳細</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<?php require __DIR__ . '/header.php'; ?>
+<?php require __DIR__ . '/../header.php'; ?>
 
 <div class="syouhin">
+    
     <div class="product">
         <p><img alt="image" src="../image/<?= $product['product_id'] ?>.png"></p>
-        <form action="cart.php" method="post">
+        <form action="../cart.php" method="post">
             <h3><?= htmlspecialchars($product['name'], ENT_QUOTES) ?></h3>
             <p class="price">￥<?= number_format($product['price']) ?><small>税込み</small></p>
 
@@ -72,20 +72,22 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
             </p>
 
             <?php if ($product['stock'] > 0): ?>
-                個数<br>
-                <select name="count">
+                個数:
+                <select name="quantity">
                     <?php for ($i = 1; $i <= $product['stock']; $i++): ?>
                         <option value="<?= $i ?>"><?= $i ?></option>
                     <?php endfor; ?>
                 </select>
-                <p><input type="submit" value="カートに追加"></p>
+                <input type="hidden" name="product_id" value="<?= $product['product_id'] ?>">
+                <input type="hidden" name="action" value="add">
+                <p>
+                    <button type="button" onclick="addToCart(<?= $product['product_id'] ?>)">
+                        カートに追加
+                    </button>
+                </p>
             <?php else: ?>
                 <p style="color:green;">在庫切れ</p>
             <?php endif; ?>
-
-            <input type="hidden" name="id" value="<?= $product['product_id'] ?>">
-            <input type="hidden" name="name" value="<?= htmlspecialchars($product['name'], ENT_QUOTES) ?>">
-            <input type="hidden" name="price" value="<?= $product['price'] ?>">
         </form>
     </div>
 
@@ -140,7 +142,37 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
     </div>
 </div>
 
+<script>
+    function addToCart(productId) {
+        // 選択された数量を取得
+        const quantity = document.querySelector('select[name="quantity"]').value;
+
+        fetch('cart.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=add&product_id=' + productId + '&quantity=' + quantity
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('カートに追加しました');
+                if (confirm('カートを確認しますか？')) {
+                    window.location.href = '../cart.php';
+                }
+            } else {
+                alert(data.message || 'カートに追加できませんでした');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('エラーが発生しました');
+        });
+    }
+</script>
+
 <?php require __DIR__ . '/style.php'; ?>
-<?php require __DIR__ . '/footer.php'; ?>
+<?php require __DIR__ . '/../footer.php'; ?>
 </body>
 </html>

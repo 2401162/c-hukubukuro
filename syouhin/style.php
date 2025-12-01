@@ -60,7 +60,7 @@ select {
     margin-top: 5px;
 }
 
-input[type="submit"] {
+button {
     background-color: #ff8c8c;
     border: none;
     color: #fff;
@@ -72,7 +72,7 @@ input[type="submit"] {
     transition: 0.3s;
 }
 
-input[type="submit"]:hover {
+button:hover {
     background-color: #ff6b6b;
 }
 
