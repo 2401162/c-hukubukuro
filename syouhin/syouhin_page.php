@@ -57,9 +57,8 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
 </head>
 <body>
 <?php require __DIR__ . '/../header.php'; ?>
-
+<a href="../product-list.php" class="list-link">商品一覧</a>
 <div class="syouhin">
-    
     <div class="product">
         <p><img alt="image" src="../image/<?= $product['product_id'] ?>.png"></p>
         <form action="../cart.php" method="post">
@@ -147,7 +146,7 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
         // 選択された数量を取得
         const quantity = document.querySelector('select[name="quantity"]').value;
 
-        fetch('cart.php', {
+        fetch('/2025/prac/cart.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
