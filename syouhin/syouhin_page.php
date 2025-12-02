@@ -57,9 +57,8 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
 </head>
 <body>
 <?php require __DIR__ . '/../header.php'; ?>
-
+<a href="../product-list.php" class="list-link">商品一覧</a>
 <div class="syouhin">
-    
     <div class="product">
         <p><img alt="image" src="../image/<?= $product['product_id'] ?>.png"></p>
         <form action="../cart.php" method="post">
