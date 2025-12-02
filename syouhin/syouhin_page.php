@@ -147,7 +147,7 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
         // 選択された数量を取得
         const quantity = document.querySelector('select[name="quantity"]').value;
 
-        fetch('cart.php', {
+        fetch('/2025/prac/cart.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
