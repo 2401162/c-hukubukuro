@@ -92,7 +92,6 @@ function renderProductList($items) {
 <body>
 
   <div class="banner" role="img" aria-label="セールバナー"></div>
-
   <main>
     <section class="section">
       <div class="product-section">
@@ -117,6 +116,40 @@ function renderProductList($items) {
         </div>
       </div>
     </section>
+  
+      <section class="section">
+        <div class="search-section" aria-label="商品を探す">
+          <div class="search-title">
+            <h2>探す</h2>
+            <a href="product-list.php" class="list-link">一覧へ</a>
+          </div>
+          <div>
+            <div style="margin-bottom:6px;font-size:13px;color:#555">ジャンル（選択すると絞り込み）</div>
+            <div class="tag-group" id="genreTags">
+              <?php if (!empty($genres)): ?>
+                <?php foreach($genres as $g): ?>
+                  <button type="button" class="tag genre" data-id="<?= htmlspecialchars($g['id'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($g['name'], ENT_QUOTES, 'UTF-8') ?></button>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <!-- ジャンルが未登録の場合のプレースホルダ -->
+                <span style="color:#999">ジャンルが登録されていません</span>
+              <?php endif; ?>
+            </div>
+          </div>
+          <div>
+            <div style="margin-bottom:6px;font-size:13px;color:#555">価格で絞る</div>
+            <div class="tag-group" id="priceTags">
+              <button type="button" class="tag price" data-range="0-1000">～1,000円</button>
+              <button type="button" class="tag price" data-range="1000-3000">1,000〜3,000円</button>
+              <button type="button" class="tag price" data-range="3000-5000">3,000〜5,000円</button>
+              <button type="button" class="tag price" data-range="5000-">5,000円〜</button>
+            </div>
+          </div>
+          <div>
+            <button id="searchBtn" class="search-btn" type="button">探す</button>
+          </div>
+        </div>
+      </section>
   </main>
 
   <script>
