@@ -59,15 +59,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = '星を選択してください。';
     } else {
         try {
-            // order_item_id を正しくセット
-            $sql = "INSERT INTO review (order_item_id, rating, comment, is_active, created_at, updated_at)
-                    VALUES (:order_item_id, :rating, :comment, 1, NOW(), NOW())";
+            // 既存レビューがあれば削除
+            $sql = "DELETE FROM review WHERE order_item_id = :oid";
             $stmt = $pdo->prepare($sql);
-            $stmt->bindValue(':order_item_id', $order_item_id, PDO::PARAM_INT);
+            $stmt->bindValue(':oid', $order_item_id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            // 新しいレビューを挿入
+            $sql = "INSERT INTO review (order_item_id, rating, comment, is_active, created_at, updated_at)
+                    VALUES (:oid, :rating, :comment, 1, NOW(), NOW())";
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':oid', $order_item_id, PDO::PARAM_INT);
             $stmt->bindValue(':rating', $rating, PDO::PARAM_INT);
             $stmt->bindValue(':comment', $comment, PDO::PARAM_STR);
             $stmt->execute();
+
             $posted = true;
+            $error = 'レビューを更新しました。';
         } catch (PDOException $e) {
             $error = 'レビューの登録に失敗しました：' . $e->getMessage();
         }
@@ -92,7 +100,7 @@ include __DIR__ . '/header.php';
 
 <style>
 /* ここは既存のCSSをそのまま使用 */
-.review-wrapper { max-width: 900px; margin: 40px auto 80px; font-family: "Noto Sans JP", sans-serif; }
+.review-wrapper {max-width: 900px; margin: 40px auto 80px; font-family: "Noto Sans JP", sans-serif; }
 .review-main { display: flex; gap: 60px; align-items: flex-start; }
 .review-image-box { width: 260px; height: 260px; background: #6f6666; color: #fff; display: flex; justify-content: center; align-items: center; font-size: 18px; }
 .review-image-box img { width: 100%; height: 100%; object-fit: cover; }
