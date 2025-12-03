@@ -33,6 +33,19 @@ $ranking_stmt = $pdo->prepare("
 $ranking_stmt->execute();
 $ranking = $ranking_stmt->fetchAll();
 
+// トップに表示するジャンルを指定の順で取得（ゲーム, アニメ, お菓子, ぬいぐるみ, 文房具）
+$genres = [];
+$desired = ['ゲーム','アニメ','お菓子','ぬいぐるみ','文房具'];
+try {
+  // genre テーブルのカラムは genre_id / genre_name
+  $placeholders = implode(',', array_fill(0, count($desired), '?'));
+  $sql = "SELECT genre_id AS id, genre_name AS name FROM genre WHERE genre_name IN ($placeholders) ORDER BY FIELD(genre_name, 'ゲーム','アニメ','お菓子','ぬいぐるみ','文房具')";
+  $gstmt = $pdo->prepare($sql);
+  $gstmt->execute($desired);
+  $genres = $gstmt->fetchAll();
+} catch (PDOException $e) {
+  // ジャンル取得失敗は無視（UI は空表示になる）
+}
 // 画像パスを決めるヘルパー
 function resolve_image_path(array $item): string {
   $img = $item['image_path'] ?? '';
@@ -87,6 +100,14 @@ function renderProductList($items) {
     .soldout{ background:#ccc; color:#666; }
     .section-top{ display:flex; justify-content:space-between; align-items:center; margin:0 20px; }
     .section-top h2{ font-size:20px; margin:0; }
+    /* 探す（トップ） */
+    .search-section{max-width:1200px;margin:18px auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+    .search-title{display:flex;justify-content:space-between;align-items:center}
+    .tag-group{display:flex;flex-wrap:wrap;gap:8px}
+    .tag{display:inline-block;padding:8px 12px;border-radius:999px;border:1px solid #ddd;background:#f0f0f0;color:#666;cursor:pointer;font-size:14px}
+    .tag.active{background:#ec4c4c;color:#fff;border-color:#ec4c4c}
+    .search-btn{padding:10px 16px;border-radius:8px;background:#ec4c4c;color:#fff;border:none;cursor:pointer}
+    .search-btn:hover{opacity:.95}
   </style>
 </head>
 <body>
