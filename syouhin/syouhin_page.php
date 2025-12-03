@@ -1,3 +1,4 @@
+<?php session_start(); ?>
 <?php require_once __DIR__ . '/../db-connect.php'; ?>
 <?php
 try {
@@ -125,12 +126,13 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
                 $rating = max(0, min(5, (int)$review['rating']));
                 $stars = str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
                 $comment = nl2br(htmlspecialchars($review['comment'], ENT_QUOTES));
-                $date = htmlspecialchars($review['created_at'], ENT_QUOTES);
+                $reviewDate = new DateTime($review['created_at']);
+                $date = $reviewDate->format('Y年n月j日');
             ?>
                 <div class="review-box">
                     <div class="review-header"><strong><?= $name ?></strong> <span class="stars"><?= $stars ?></span></div>
                     <p class="review-comment"><?= $comment ?></p>
-                    <small class="review-date"><?= $date ?></small>
+                    <small class="review-date"><?= htmlspecialchars($date, ENT_QUOTES); ?></small>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>

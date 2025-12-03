@@ -127,7 +127,8 @@ button:hover {
 }
 
 .stars {
-    font-size: 25px;
+    margin-left: 8px;
+    font-size: 18px;
 }
 
 .review-comment {
