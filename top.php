@@ -33,15 +33,11 @@ $ranking_stmt = $pdo->prepare("
 $ranking_stmt->execute();
 $ranking = $ranking_stmt->fetchAll();
 
-// トップに表示するジャンルを指定の順で取得（ゲーム, アニメ, お菓子, ぬいぐるみ, 文房具）
+// トップに表示するジャンルを取得（最大5件）
 $genres = [];
-$desired = ['ゲーム','アニメ','お菓子','ぬいぐるみ','文房具'];
 try {
-  // genre テーブルのカラム名は genre_id / genre_name のためそれに合わせる
-  $placeholders = implode(',', array_fill(0, count($desired), '?'));
-  $sql = "SELECT genre_id AS id, genre_name AS name FROM genre WHERE genre_name IN ($placeholders) ORDER BY FIELD(genre_name, 'ゲーム','アニメ','お菓子','ぬいぐるみ','文房具')";
-  $gstmt = $pdo->prepare($sql);
-  $gstmt->execute($desired);
+  $gstmt = $pdo->prepare("SELECT jenre_id AS id, name FROM genre ORDER BY name ASC LIMIT 5");
+  $gstmt->execute();
   $genres = $gstmt->fetchAll();
 } catch (PDOException $e) {
   // ジャンル取得失敗は無視（UI は空表示になる）
@@ -50,9 +46,7 @@ try {
 function resolve_image_path(array $item): string {
   $img = $item['image_path'] ?? '';
   if (!$img) return 'img/noimage.png';
-  // 絶対URLまたは先頭が / の場合はそのまま
   if (preg_match('#^(https?://|//|/)#i', $img)) return $img;
-  // 既に uploads/ が含まれる場合はそのまま
   if (strpos($img, 'uploads/') === 0) return $img;
   return 'uploads/' . ltrim($img, '/');
 }
@@ -73,7 +67,7 @@ function renderProductList($items) {
       <p class="product-name"><a href="syouhin/syouhin_page.php?id=<?= $id ?>"><?= $name ?></a></p>
       <p class="product-price">¥<?= $price ?></p>
       <?php if ($stock > 0): ?>
-        <button class="cart-btn" data-id="<?= $id ?>">カートに追加</button>
+        <button class="cart-btn" data-id="<?= $id ?>" onclick="addToCart(<?= $id ?>)">カートに追加</button>
       <?php else: ?>
         <span class="soldout">売り切れ</span>
       <?php endif; ?>
@@ -106,19 +100,15 @@ function renderProductList($items) {
     .search-section{max-width:1200px;margin:18px auto;padding:12px;display:flex;flex-direction:column;gap:10px}
     .search-title{display:flex;justify-content:space-between;align-items:center}
     .tag-group{display:flex;flex-wrap:wrap;gap:8px}
-    .tag{display:inline-block;padding:8px 12px;border-radius:999px;border:1px solid #ddd;background:#f0f0f0;color:#666;cursor:pointer;font-size:14px}
+    .tag{display:inline-block;padding:8px 12px;border-radius:999px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:14px}
     .tag.active{background:#ec4c4c;color:#fff;border-color:#ec4c4c}
-    .search-btn{padding:10px 16px;border-radius:8px;background:#ec4c4c;color:#fff;border:none;cursor:pointer}
+    .search-btn{padding:10px 16px;border-radius:8px;background:#0078d4;color:#fff;border:none;cursor:pointer}
     .search-btn:hover{opacity:.95}
   </style>
 </head>
 <body>
 
-  
-
   <div class="banner" role="img" aria-label="セールバナー"></div>
- 
-
   <main>
     <section class="section">
       <div class="product-section">
@@ -180,50 +170,57 @@ function renderProductList($items) {
   </main>
 
   <script>
-    (function(){
-      const genreWrap = document.getElementById('genreTags');
-      const priceWrap = document.getElementById('priceTags');
-      const searchBtn = document.getElementById('searchBtn');
-      let selectedGenre = null;
-      let selectedPrice = null;
+    function addToCart(productId) {
+        // 数量は1固定（トップページでは数量選択なし）
+        const quantity = 1;
 
-      function clearActive(container){
-        if(!container) return;
-        Array.from(container.querySelectorAll('.tag')).forEach(el=>el.classList.remove('active'));
-      }
-
-      if (genreWrap) {
-        genreWrap.addEventListener('click', function(e){
-          const b = e.target.closest('.tag.genre');
-          if (!b) return;
-          clearActive(genreWrap);
-          b.classList.add('active');
-          selectedGenre = b.dataset.id || null;
+        fetch('/2025/prac/cart.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: 'action=add&product_id=' + productId + '&quantity=' + quantity
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('カートに追加しました');
+                
+                // カートバッジを更新
+                updateCartBadge(data.cart_count);
+                
+                if (confirm('カートを確認しますか？')) {
+                    window.location.href = '/2025/prac/cart.php';
+                }
+            } else {
+                alert(data.message || 'カートに追加できませんでした');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('エラーが発生しました');
         });
-      }
+    }
 
-      if (priceWrap) {
-        priceWrap.addEventListener('click', function(e){
-          const b = e.target.closest('.tag.price');
-          if (!b) return;
-          clearActive(priceWrap);
-          b.classList.add('active');
-          selectedPrice = b.dataset.range || null;
-        });
-      }
-
-      if (searchBtn) {
-        searchBtn.addEventListener('click', function(){
-          const sp = new URLSearchParams();
-          if (selectedGenre) sp.set('genre', selectedGenre);
-          if (selectedPrice) sp.set('price', selectedPrice);
-          // リセットページ
-          sp.delete('page');
-          const q = sp.toString();
-          location.href = 'product-list.php' + (q ? ('?' + q) : '');
-        });
-      }
-    })();
+    // カートバッジ更新関数
+    function updateCartBadge(count) {
+        const badge = document.querySelector('.cart-badge');
+        if (count > 0) {
+            if (badge) {
+                badge.textContent = count;
+            } else {
+                // バッジが存在しない場合は作成
+                const cartLink = document.querySelector('a[href*="cart.php"]');
+                if (cartLink) {
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'cart-badge';
+                    newBadge.textContent = count;
+                    cartLink.appendChild(newBadge);
+                }
+            }
+        }
+    }
   </script>
 
 <?php require 'footer.php'; ?>
