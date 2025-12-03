@@ -15,7 +15,7 @@ if (session_status() === PHP_SESSION_NONE) {
 $isLoggedIn = !empty($_SESSION['customer']);
 
 // 環境に依存しない相対パスを使う（トップ: top.php、ログイン: rogin-input.php、マイページ: mypage.php）
-$myPageUrl = $isLoggedIn ? 'mypage.php' : 'rogin-input.php';
+$myPageUrl = $isLoggedIn ? 'mypage/mypage.php' : 'rogin-input.php';
 ?>
 <!-- Icons: using inline SVG to avoid external CDN/tracking issues -->
 
