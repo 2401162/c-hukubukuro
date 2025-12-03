@@ -33,6 +33,15 @@ $ranking_stmt = $pdo->prepare("
 $ranking_stmt->execute();
 $ranking = $ranking_stmt->fetchAll();
 
+// トップに表示するジャンルを取得（最大5件）
+$genres = [];
+try {
+  $gstmt = $pdo->prepare("SELECT jenre_id AS id, name FROM genre ORDER BY name ASC LIMIT 5");
+  $gstmt->execute();
+  $genres = $gstmt->fetchAll();
+} catch (PDOException $e) {
+  // ジャンル取得失敗は無視（UI は空表示になる）
+}
 // 画像パスを決めるヘルパー
 function resolve_image_path(array $item): string {
   $img = $item['image_path'] ?? '';
@@ -89,6 +98,14 @@ function renderProductList($items) {
     .soldout{ background:#ccc; color:#666; }
     .section-top{ display:flex; justify-content:space-between; align-items:center; margin:0 20px; }
     .section-top h2{ font-size:20px; margin:0; }
+    /* 探す（トップ） */
+    .search-section{max-width:1200px;margin:18px auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+    .search-title{display:flex;justify-content:space-between;align-items:center}
+    .tag-group{display:flex;flex-wrap:wrap;gap:8px}
+    .tag{display:inline-block;padding:8px 12px;border-radius:999px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:14px}
+    .tag.active{background:#ec4c4c;color:#fff;border-color:#ec4c4c}
+    .search-btn{padding:10px 16px;border-radius:8px;background:#0078d4;color:#fff;border:none;cursor:pointer}
+    .search-btn:hover{opacity:.95}
   </style>
 </head>
 <body>
@@ -96,6 +113,40 @@ function renderProductList($items) {
   
 
   <div class="banner" role="img" aria-label="セールバナー"></div>
+
+  <section class="section">
+    <div class="search-section" aria-label="商品を探す">
+      <div class="search-title">
+        <h2>探す</h2>
+        <a href="product-list.php" class="list-link">一覧へ</a>
+      </div>
+      <div>
+        <div style="margin-bottom:6px;font-size:13px;color:#555">ジャンル（選択すると絞り込み）</div>
+        <div class="tag-group" id="genreTags">
+          <?php if (!empty($genres)): ?>
+            <?php foreach($genres as $g): ?>
+              <button type="button" class="tag genre" data-id="<?= htmlspecialchars($g['id'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($g['name'], ENT_QUOTES, 'UTF-8') ?></button>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <!-- ジャンルが未登録の場合のプレースホルダ -->
+            <span style="color:#999">ジャンルが登録されていません</span>
+          <?php endif; ?>
+        </div>
+      </div>
+      <div>
+        <div style="margin-bottom:6px;font-size:13px;color:#555">価格で絞る</div>
+        <div class="tag-group" id="priceTags">
+          <button type="button" class="tag price" data-range="0-1000">～1,000円</button>
+          <button type="button" class="tag price" data-range="1000-3000">1,000〜3,000円</button>
+          <button type="button" class="tag price" data-range="3000-5000">3,000〜5,000円</button>
+          <button type="button" class="tag price" data-range="5000-">5,000円〜</button>
+        </div>
+      </div>
+      <div>
+        <button id="searchBtn" class="search-btn" type="button">探す</button>
+      </div>
+    </div>
+  </section>
 
   <main>
     <section class="section">
@@ -123,11 +174,53 @@ function renderProductList($items) {
     </section>
   </main>
 
+  <script>
+    (function(){
+      const genreWrap = document.getElementById('genreTags');
+      const priceWrap = document.getElementById('priceTags');
+      const searchBtn = document.getElementById('searchBtn');
+      let selectedGenre = null;
+      let selectedPrice = null;
+
+      function clearActive(container){
+        if(!container) return;
+        Array.from(container.querySelectorAll('.tag')).forEach(el=>el.classList.remove('active'));
+      }
+
+      if (genreWrap) {
+        genreWrap.addEventListener('click', function(e){
+          const b = e.target.closest('.tag.genre');
+          if (!b) return;
+          clearActive(genreWrap);
+          b.classList.add('active');
+          selectedGenre = b.dataset.id || null;
+        });
+      }
+
+      if (priceWrap) {
+        priceWrap.addEventListener('click', function(e){
+          const b = e.target.closest('.tag.price');
+          if (!b) return;
+          clearActive(priceWrap);
+          b.classList.add('active');
+          selectedPrice = b.dataset.range || null;
+        });
+      }
+
+      if (searchBtn) {
+        searchBtn.addEventListener('click', function(){
+          const sp = new URLSearchParams();
+          if (selectedGenre) sp.set('genre', selectedGenre);
+          if (selectedPrice) sp.set('price', selectedPrice);
+          // リセットページ
+          sp.delete('page');
+          const q = sp.toString();
+          location.href = 'product-list.php' + (q ? ('?' + q) : '');
+        });
+      }
+    })();
+  </script>
+
 <?php require 'footer.php'; ?>
 </body>
-<<<<<<< HEAD
 </html>
-=======
-</html>
-
->>>>>>> 8b65446df7a4c54c8a0ceadd914236ea4d55a169
