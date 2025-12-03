@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
 function h($s){ return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 
 // ログアウト後の戻り先（未指定なら index.php）
-$redirect = isset($_GET['redirect']) ? $_GET['redirect'] : 'index.php';
+$redirect = isset($_GET['redirect']) ? $_GET['redirect'] : 'top.php';
 ?>
 <!DOCTYPE html>
 <html lang="ja">
