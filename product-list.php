@@ -203,7 +203,7 @@ function renderPage(page=1){
       ? `<img class="thumb" src="${escapeAttr(imgSrc)}" alt="${escapeHtml(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><div style="background:#f0f0f0;width:100%;aspect-ratio:1/1;display:none;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;"><span>画像未設定</span></div>`
       : `<div style="background:#f0f0f0;width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;"><span>画像未設定</span></div>`;
     return `
-    <a class="card" href="product-detail.php?id=${p.id}" aria-label="${escapeHtml(p.name)}の詳細へ">
+    <a class="card" href="syouhin/syouhin_page.php?id=${p.id}" aria-label="${escapeHtml(p.name)}の詳細へ">
       ${thumbHtml}
       <div class="body">
         <div class="name">${escapeHtml(p.name)}</div>
