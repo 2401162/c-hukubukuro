@@ -66,7 +66,7 @@ try {
 }
 
 if ($didDbAuth) {
-    $to = $redirect !== '' ? $redirect : 'mypage/mypage.php';
+    $to = $redirect !== '' ? $redirect : 'top.php';
     header('Location: ' . $to);
     exit;
 }
@@ -85,7 +85,7 @@ if ($email === $DEMO_USER['email'] && $password === $DEMO_USER['password']) {
     ];
     // デモユーザー用にトップレベルの customer_id を設定（0 を割り当てる）
     $_SESSION['customer_id'] = 0;
-    $to = $redirect !== '' ? $redirect : 'mypage/mypage.php';
+    $to = $redirect !== '' ? $redirect : 'top.php';
     header('Location: ' . $to);
     exit;
 }
