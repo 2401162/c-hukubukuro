@@ -40,6 +40,7 @@ try {
         $name_sei = $name_parts[0] ?? '';
         $name_mei = $name_parts[1] ?? '';
         
+        // セッションにユーザー情報をセット（既存コード互換のため二形態を保持）
         $_SESSION['customer'] = [
             'customer_id' => $user['customer_id'],
             'id'          => $user['customer_id'],  // 互換性のため
@@ -48,6 +49,8 @@ try {
             'name_sei'    => $name_sei,
             'name_mei'    => $name_mei,
         ];
+        // 既存のマイページなどが参照するトップレベルのキーもセットしておく
+        $_SESSION['customer_id'] = $user['customer_id'];
         $didDbAuth = true;
         
         // ログイン時刻を更新
@@ -80,6 +83,8 @@ if ($email === $DEMO_USER['email'] && $password === $DEMO_USER['password']) {
         'email'    => $DEMO_USER['email'],
         'username' => $DEMO_USER['username'],
     ];
+    // デモユーザー用にトップレベルの customer_id を設定（0 を割り当てる）
+    $_SESSION['customer_id'] = 0;
     $to = $redirect !== '' ? $redirect : 'mypage/mypage.php';
     header('Location: ' . $to);
     exit;
