@@ -110,16 +110,41 @@ try {
     // 各商品に画像パスを付与（DB の image_path を優先、無ければ image/[id].png）
     foreach ($products as &$p) {
       $img = isset($p['image_path']) ? trim($p['image_path']) : '';
+      $final = '';
       if ($img) {
-        // 絶対 or uploads をそのまま使う
-        if (preg_match('#^(https?://|//|/)#i', $img) || strpos($img, 'uploads/') === 0) {
-          $p['image'] = $img;
+        if (preg_match('#^(https?://|//|/)#i', $img)) {
+          // 外部URLはそのまま
+          $final = $img;
+        } elseif (strpos($img, 'uploads/') === 0) {
+          // uploads/ の場合はサーバ上のファイル存在を確認してから使用
+          $serverPath = __DIR__ . DIRECTORY_SEPARATOR . $img;
+          if (is_file($serverPath)) {
+            $final = $img;
+          } else {
+            // ファイルが無ければフォールバック
+            $final = 'image/' . $p['id'] . '.png';
+          }
         } else {
-          $p['image'] = 'uploads/' . ltrim($img, '/');
+          // 相対パスが指定されている場合は uploads/ を付与して確認
+          $candidate = 'uploads/' . ltrim($img, '/');
+          $serverPath = __DIR__ . DIRECTORY_SEPARATOR . $candidate;
+          if (is_file($serverPath)) {
+            $final = $candidate;
+          } else {
+            $final = 'image/' . $p['id'] . '.png';
+          }
         }
       } else {
-        $p['image'] = 'image/' . $p['id'] . '.png';
+        $final = 'image/' . $p['id'] . '.png';
       }
+      // 最終手段: フォールバック画像も存在しなければ共通の noimage を使う
+      if (strpos($final, 'image/') === 0 || strpos($final, 'uploads/') === 0) {
+        $checkPath = __DIR__ . DIRECTORY_SEPARATOR . $final;
+        if (!is_file($checkPath)) {
+          $final = 'img/noimage.png';
+        }
+      }
+      $p['image'] = $final;
     }
     unset($p);
     
@@ -154,15 +179,36 @@ if (empty($products)) {
       $products = $fb;
       foreach ($products as &$p) {
         $img = isset($p['image_path']) ? trim($p['image_path']) : '';
+        $final = '';
         if ($img) {
-          if (preg_match('#^(https?://|//|/)#i', $img) || strpos($img, 'uploads/') === 0) {
-            $p['image'] = $img;
+          if (preg_match('#^(https?://|//|/)#i', $img)) {
+            $final = $img;
+          } elseif (strpos($img, 'uploads/') === 0) {
+            $serverPath = __DIR__ . DIRECTORY_SEPARATOR . $img;
+            if (is_file($serverPath)) {
+              $final = $img;
+            } else {
+              $final = 'image/' . $p['id'] . '.png';
+            }
           } else {
-            $p['image'] = 'uploads/' . ltrim($img, '/');
+            $candidate = 'uploads/' . ltrim($img, '/');
+            $serverPath = __DIR__ . DIRECTORY_SEPARATOR . $candidate;
+            if (is_file($serverPath)) {
+              $final = $candidate;
+            } else {
+              $final = 'image/' . $p['id'] . '.png';
+            }
           }
         } else {
-          $p['image'] = 'image/' . $p['id'] . '.png';
+          $final = 'image/' . $p['id'] . '.png';
         }
+        if (strpos($final, 'image/') === 0 || strpos($final, 'uploads/') === 0) {
+          $checkPath = __DIR__ . DIRECTORY_SEPARATOR . $final;
+          if (!is_file($checkPath)) {
+            $final = 'img/noimage.png';
+          }
+        }
+        $p['image'] = $final;
       }
       unset($p);
       $usedFallback = true;
@@ -170,6 +216,30 @@ if (empty($products)) {
   } catch (PDOException $e) {
     error_log('Product fallback error: ' . $e->getMessage());
   }
+}
+
+// デバッグ出力: ?debug=1 を付けると画像URLとサーバ上の存在を表示
+if (isset($_GET['debug']) && $_GET['debug'] == '1') {
+  echo "<div style='max-width:1200px;margin:12px auto;padding:12px;background:#fff;border:1px solid #eee;'>";
+  echo "<h3>DEBUG: products (showing image paths and file existence)</h3>";
+  echo "<pre>" . htmlspecialchars(json_encode($products, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') . "</pre>";
+  echo "<ul>";
+  foreach ($products as $pp) {
+    $img = $pp['image'] ?? '';
+    $exists = 'n/a';
+    if ($img) {
+      // check server path if local relative
+      if (strpos($img, 'uploads/') === 0 || strpos($img, 'image/') === 0) {
+        $serverPath = __DIR__ . DIRECTORY_SEPARATOR . $img;
+        $exists = is_file($serverPath) ? 'yes' : 'no';
+      } else {
+        $exists = 'external';
+      }
+    }
+    echo '<li>id=' . htmlspecialchars($pp['id']) . ' image=' . htmlspecialchars($img) . ' exists=' . $exists . '</li>';
+  }
+  echo "</ul>";
+  echo "</div>";
 }
 
 // NOTE: ダミーデータは表示しない。実際に登録されている商品のみ表示する。
