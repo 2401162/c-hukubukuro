@@ -3,13 +3,13 @@ session_start();
 require __DIR__ . '/../db-connect.php';
 
 // ログインチェック
-if (!isset($_SESSION['customer_id'])) {
+if (!isset($_SESSION['customer'])) {
     // 未ログインなら login.php にリダイレクト
-    header('Location: rogin-input.php');
+    header('Location: /rogin-input.php');
     exit;
 }
 
-$customer_id = $_SESSION['customer_id'];
+$customer_id = $_SESSION['customer']['customer_id'];
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -34,6 +34,7 @@ try {
         SELECT 
             o.order_id,
             o.created_at AS order_date,
+            oi.order_item_id,
             p.product_id,
             p.name AS product_name,
             oi.quantity,
@@ -50,6 +51,8 @@ try {
         WHERE o.customer_id = ?
         ORDER BY o.created_at DESC;
     ";
+
+    
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$customer_id]);
@@ -80,9 +83,9 @@ try {
             echo '<h3>'.number_format($order['subtotal']).'円</h3>';
 
             if ($order['review_id']) {
-                echo '<a href="review.php?order_id='.$order['order_id'].'">レビュー再投稿</a>';
+                echo '<a href="/2025/prac/review.php?order_item_id=' . $order['order_item_id'] . '">レビュー再投稿</a>';
             } else {
-                echo '<a href="review.php?order_id='.$order['order_id'].'">レビュー</a>';
+                echo '<a href="/2025/prac/review.php?order_item_id=' . $order['order_item_id'] . '">レビューを書く</a>';
             }
 
             echo '</div>';
