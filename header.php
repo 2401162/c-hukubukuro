@@ -124,7 +124,6 @@ $myPageUrl = $isLoggedIn ? $basePath . 'mypage/mypage.php' : $basePath . 'rogin-
     top: 100%;
     right: 0;
     background: #fff;
-    border-radius: 6px;
     box-shadow: 0 2px 8px rgba(0,0,0,.12);
     min-width: 110px;
     opacity: 0;
@@ -144,7 +143,7 @@ $myPageUrl = $isLoggedIn ? $basePath . 'mypage/mypage.php' : $basePath . 'rogin-
 
   .user-dropdown a {
     display: block;
-    padding: 4px 14px;
+    padding: 2px;
     color: #000;
     text-decoration: none;
     font-size: 12px;
@@ -153,12 +152,7 @@ $myPageUrl = $isLoggedIn ? $basePath . 'mypage/mypage.php' : $basePath . 'rogin-
     text-align: center;
   }
 
-  .user-dropdown a:first-child {
-    border-radius: 6px 6px 0 0;
-  }
-
   .user-dropdown a:last-child {
-    border-radius: 0 0 6px 6px;
     border-top: 1px solid #eee;
   }
 
