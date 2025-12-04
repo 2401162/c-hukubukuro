@@ -178,7 +178,7 @@ function renderProductList($items) {
         // 数量は1固定（トップページでは数量選択なし）
         const quantity = 1;
 
-        fetch('/2025/prac/cart.php', {
+        fetch('/2025/c-hukubukuro/cart.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -195,7 +195,7 @@ function renderProductList($items) {
                 updateCartBadge(data.cart_count);
                 
                 if (confirm('カートを確認しますか？')) {
-                    window.location.href = '/2025/prac/cart.php';
+                    window.location.href = '/2025/c-hukubukuro/cart.php';
                 }
             } else {
                 alert(data.message || 'カートに追加できませんでした');
