@@ -9,6 +9,14 @@ if (!isset($_SESSION['customer'])) {
     exit;
 }
 
+function resolve_image_path(array $item): string {
+    $img = $item['image_path'] ?? '';
+    if (!$img) return 'img/noimage.png';
+    if (preg_match('#^(https?://|//|/)#i', $img)) return $img;
+    if (strpos($img, 'uploads/') === 0) return $img;
+    return 'uploads/' . ltrim($img, '/');
+}
+
 $customer_id = $_SESSION['customer']['customer_id'];
 ?>
 <!DOCTYPE html>
@@ -38,6 +46,7 @@ try {
             p.product_id,
             p.name AS product_name,
             oi.quantity,
+            p.image_path,
             oi.unit_price,
             oi.subtotal,
             r.review_id
@@ -66,7 +75,7 @@ try {
         foreach ($orders as $order) {
             echo '<div class="purchase-card">';
             echo '<div class="card-image">';
-            echo '<img alt="image" src="image/'.$order['product_id'].'.png" class="order_image">';
+            echo '<img alt="image" src="../'.htmlspecialchars($order['image_path']).'" class="order_image">';
             echo '</div>';
 
             echo '<div class="card-main">';
@@ -83,9 +92,9 @@ try {
             echo '<h3>'.number_format($order['subtotal']).'円</h3>';
 
             if ($order['review_id']) {
-                echo '<a href="/2025/c-hukubukuro/review.php?order_item_id=' . $order['order_item_id'] . '">レビュー再投稿</a>';
+                echo '<a href="/2025/prac/review.php?order_item_id=' . $order['order_item_id'] . '">レビュー再投稿</a>';
             } else {
-                echo '<a href="/2025/c-hukubukuro/review.php?order_item_id=' . $order['order_item_id'] . '">レビューを書く</a>';
+                echo '<a href="/2025/prac/review.php?order_item_id=' . $order['order_item_id'] . '">レビューを書く</a>';
             }
 
             echo '</div>';

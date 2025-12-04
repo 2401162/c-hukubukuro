@@ -61,7 +61,7 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
 <a href="../product-list.php" class="list-link">商品一覧</a>
 <div class="syouhin">
     <div class="product">
-        <p><img alt="image" src="../image/<?= $product['product_id'] ?>.png"></p>
+        <p><img alt="image" src="../<?= $product['image_path'] ?>"></p>
         <form action="../cart.php" method="post">
             <h3><?= htmlspecialchars($product['name'], ENT_QUOTES) ?></h3>
             <p class="price">￥<?= number_format($product['price']) ?><small>税込み</small></p>
@@ -148,7 +148,7 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
         // 選択された数量を取得
         const quantity = document.querySelector('select[name="quantity"]').value;
 
-        fetch('/2025/c-hukubukuro/cart.php', {
+        fetch('/2025/prac/cart.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
