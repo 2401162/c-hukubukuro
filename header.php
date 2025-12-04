@@ -12,7 +12,7 @@ if (session_status() === PHP_SESSION_NONE) {
 $isLoggedIn = !empty($_SESSION['customer']);
 
 // サブディレクトリを含めたパス
-$basePath = '/2025/prac/';
+$basePath = '/2025/c-hukubukuro/';
 
 $myPageUrl = $isLoggedIn ? $basePath . 'mypage/mypage.php' : $basePath . 'rogin-input.php';
 ?>

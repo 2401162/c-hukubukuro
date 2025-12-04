@@ -83,9 +83,9 @@ try {
             echo '<h3>'.number_format($order['subtotal']).'円</h3>';
 
             if ($order['review_id']) {
-                echo '<a href="/2025/prac/review.php?order_item_id=' . $order['order_item_id'] . '">レビュー再投稿</a>';
+                echo '<a href="/2025/c-hukubukuro/review.php?order_item_id=' . $order['order_item_id'] . '">レビュー再投稿</a>';
             } else {
-                echo '<a href="/2025/prac/review.php?order_item_id=' . $order['order_item_id'] . '">レビューを書く</a>';
+                echo '<a href="/2025/c-hukubukuro/review.php?order_item_id=' . $order['order_item_id'] . '">レビューを書く</a>';
             }
 
             echo '</div>';
