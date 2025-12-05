@@ -262,9 +262,10 @@ $_SESSION['cart_count'] = count($cart_items);
                 <div class="cart-items">
                     <?php foreach ($cart_items as $item): ?>
                         <div class="cart-card">
-                            <img src="<?= htmlspecialchars($item['image_path']) ?>" 
-                                 alt="<?= htmlspecialchars($item['name']) ?>"
-                                 onerror="this.src='image/placeholder.png'">
+                            <?php $img = resolve_image_path($item); ?>
+                            <img src="<?= htmlspecialchars(resolve_image_path($item)) ?>"
+                                alt="<?= htmlspecialchars($item['name']) ?>"
+                                onerror="this.src='image/placeholder.png'">
                             <div class="cart-info">
                                 <div>
                                     <p class="name"><?= htmlspecialchars($item['name']) ?></p>
