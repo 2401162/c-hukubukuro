@@ -1,23 +1,19 @@
 <?php
 // セッション開始（未開始なら開始）
-// 注意: 他ファイルで既に出力が始まっていると headers が送信済みになり
-// session_start() が警告を出すため、安全に開始できるか確認してから呼ぶ。
 if (session_status() === PHP_SESSION_NONE) {
   if (!headers_sent()) {
     session_start();
   } else {
-    // ヘッダー送信後にセッションを開始できないためログに記録（警告は出さない）
     error_log('Session not started in header.php: headers already sent');
   }
 }
 
-// ✅ ログイン判定（あなたのセッションキーに合わせてあります）
+// ✅ ログイン判定
 $isLoggedIn = !empty($_SESSION['customer']);
 
-// ✅ マイページの遷移先を決定
-$myPageUrl = $isLoggedIn ? "mypage/mypage.php" : "rogin-input.php";
+// ルートパス（必ず絶対パスに）
+$basePath = '/2025/c-hukubukuro/';
 ?>
-<!-- Icons: using inline SVG to avoid external CDN/tracking issues -->
 
 <style>
   /* ヘッダー全体 */
@@ -33,7 +29,6 @@ $myPageUrl = $isLoggedIn ? "mypage/mypage.php" : "rogin-input.php";
     z-index: 100;
   }
 
-  /* 左：ロゴ部分 */
   .site-header .brand {
     display: flex;
     align-items: center;
@@ -55,7 +50,6 @@ $myPageUrl = $isLoggedIn ? "mypage/mypage.php" : "rogin-input.php";
     letter-spacing: .04em;
   }
 
-  /* 右アイコン */
   .site-header .actions {
     display: flex;
     align-items: center;
@@ -63,8 +57,8 @@ $myPageUrl = $isLoggedIn ? "mypage/mypage.php" : "rogin-input.php";
   }
 
   .site-header .actions a {
-    color: #fff;
-    font-size: 35px;
+    color: #000000;
+    font-size: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -73,13 +67,6 @@ $myPageUrl = $isLoggedIn ? "mypage/mypage.php" : "rogin-input.php";
     transition: opacity .15s;
     height: 56px;
     text-decoration: none;
-  }
-
-  /* SVG アイコンのサイズを明示して大きく表示する（Font Awesome の代替） */
-  .site-header .actions a svg {
-    width: 36px;
-    height: 36px;
-    display: block;
   }
 
   .site-header .actions a:hover { opacity: .85; }
@@ -97,45 +84,118 @@ $myPageUrl = $isLoggedIn ? "mypage/mypage.php" : "rogin-input.php";
     font-weight: 700;
   }
 
+  .user-menu { position: relative; }
+  .user-menu-toggle {
+    cursor: pointer;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    transition: opacity .15s;
+  }
+  .user-menu-toggle:hover { opacity: .85; }
+
+  .user-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+    min-width: 110px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all .2s ease;
+    margin-top: 4px;
+  }
+
+  .user-menu:hover .user-dropdown,
+  .user-menu-toggle:focus + .user-dropdown,
+  .user-dropdown:hover {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .user-dropdown a {
+    display: block;
+    padding: 2px;
+    color: #000;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 400;
+    transition: background .15s;
+    text-align: center;
+  }
+
+  .user-dropdown a:last-child {
+    border-top: 1px solid #eee;
+  }
+
+  .user-dropdown a:hover {
+    background: #a8a8a8ff;
+    opacity: 1;
+  }
+
   @media (max-width: 480px) {
     .site-header .site-title { display: none; }
   }
-
-  .site-header .actions a .label-text { display: none; }
 </style>
 
 <header class="site-header">
+
   <!-- 左：ロゴ -->
   <div class="brand">
-    <a href="top.php" aria-label="ホームへ">
+    <a href="<?= $basePath ?>top.php" aria-label="ホームへ">
       <?php
-        // 相対パスで画像を指定（ホスティングがサブディレクトリでも動くように）
         $logoFile = 'ChatGPT Image 2025年11月5日 11_38_53.png';
-        $logoPath = 'image/' . rawurlencode($logoFile);
+        $logoPath = $basePath . 'image/' . rawurlencode($logoFile);
       ?>
-      <img src="<?= htmlspecialchars($logoPath, ENT_QUOTES, 'UTF-8') ?>" alt="サイトロゴ" class="site-logo">
+      <!-- 絶対パス保証のため先頭 / 追加 -->
+      <img src="<?= '/' . ltrim($logoPath, '/') ?>"
+           alt="サイトロゴ"
+           class="site-logo">
     </a>
+
     <span class="site-title">福袋販売サイト</span>
   </div>
 
   <!-- 右アイコン -->
   <nav class="actions">
 
-    <!-- ✅ マイページ（ログインしてない場合はログインページへ） -->
-    <a href="<?= htmlspecialchars($myPageUrl, ENT_QUOTES, 'UTF-8') ?>" aria-label="マイページ">
-      <!-- User icon (inline SVG) -->
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-        <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="#fff"/>
-        <path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8v1H4v-1z" fill="#fff"/>
-      </svg>
-    </a>
+    <?php if ($isLoggedIn): ?>
+      <!-- ログイン済み：ドロップダウン -->
+      <div class="user-menu">
+        <div class="user-menu-toggle" tabindex="0" aria-label="ユーザーメニュー">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+            <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="#fff"/>
+            <path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8v1H4v-1z" fill="#fff"/>
+          </svg>
+        </div>
+
+        <div class="user-dropdown">
+          <a href="<?= $basePath . 'mypage/mypage.php' ?>">マイページ</a>
+          <a href="<?= $basePath . 'rogout-input.php' ?>">ログアウト</a>
+        </div>
+      </div>
+
+    <?php else: ?>
+      <!-- 未ログイン -->
+      <a href="<?= $basePath . 'rogin-input.php' ?>" aria-label="ログイン">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+          <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="#fff"/>
+          <path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8v1H4v-1z" fill="#fff"/>
+        </svg>
+      </a>
+    <?php endif; ?>
 
     <!-- カート -->
-    <a href="cart.php" aria-label="カート">
-      <!-- Cart icon (inline SVG) -->
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-        <path d="M7 4h-2l-1 2v2h2l3.6 7.59-1.35 2.45C8.89 18.76 9.5 20 11 20h8v-2h-7.42c-.14 0-.25-.11-.25-.25l.03-.12L12.1 15h5.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49-.02-.02c.07-.14.08-.3.08-.46 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59L6.5 16h12.02" fill="#fff"/>
+    <a href="<?= $basePath . 'cart.php' ?>" aria-label="カート">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+        <path d="M7 4h-2l-1 2v2h2l3.6 7.59-1.35 2.45C8.89 18.76 9.5 20 11 20h8v-2h-2.42l-.22-.37L12.1 15h5.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49-.02-.02c.07-.14.08-.3.08-.46 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59L6.5 16h12.02" fill="#fff"/>
       </svg>
+
       <?php
         $cartCount = $_SESSION['cart_count'] ?? 0;
         if ($cartCount > 0) {
@@ -143,6 +203,6 @@ $myPageUrl = $isLoggedIn ? "mypage/mypage.php" : "rogin-input.php";
         }
       ?>
     </a>
+
   </nav>
 </header>
-
