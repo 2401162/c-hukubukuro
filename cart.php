@@ -161,6 +161,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove'])) {
     exit;
 }
 
+function resolve_image_path(array $item): string {
+    $img = $item['image_path'] ?? '';
+    if (!$img) return 'img/noimage.png';
+    if (preg_match('#^(https?://|//|/)#i', $img)) return $img;
+    if (strpos($img, 'uploads/') === 0) return $img;
+    return 'uploads/' . ltrim($img, '/');
+}
+
 // ==============================
 // カート内容を取得
 // ==============================
@@ -171,7 +179,7 @@ if ($customer_id) {
     // DBから取得
     $stmt = $pdo->prepare("
         SELECT ci.cart_item_id, ci.product_id, ci.quantity, ci.unit_price_snapshot,
-               p.name, p.price, p.stock
+            p.name, p.price, p.stock, p.image_path
         FROM cart c
         JOIN cart_item ci ON c.cart_id = ci.cart_id
         JOIN product p ON ci.product_id = p.product_id
@@ -254,7 +262,7 @@ $_SESSION['cart_count'] = count($cart_items);
                 <div class="cart-items">
                     <?php foreach ($cart_items as $item): ?>
                         <div class="cart-card">
-                            <img src="image/<?= htmlspecialchars($item['product_id']) ?>.png" 
+                            <img src="<?= htmlspecialchars($item['image_path']) ?>" 
                                  alt="<?= htmlspecialchars($item['name']) ?>"
                                  onerror="this.src='image/placeholder.png'">
                             <div class="cart-info">
