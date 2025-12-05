@@ -48,7 +48,7 @@ try {
 // 画像パスを決めるヘルパー
 function resolve_image_path(array $item): string {
   $img = $item['image_path'] ?? '';
-  if (!$img) return 'img/noimage.png';
+  if (!$img) return 'image/noimage.svg';
   if (preg_match('#^(https?://|//|/)#i', $img)) return $img;
   if (strpos($img, 'uploads/') === 0) return $img;
   return 'uploads/' . ltrim($img, '/');
