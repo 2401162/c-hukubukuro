@@ -179,34 +179,38 @@ function renderProductList($items) {
         const quantity = 1;
 
       fetch(CART_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: 'action=add&product_id=' + productId + '&quantity=' + quantity
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('カートに追加しました');
-                
-                // カートバッジを更新
-              if (typeof updateCartBadge === 'function') {
-                updateCartBadge(data.cart_count ?? 0);
-              }
-                
-                if (confirm('カートを確認しますか？')) {
-                window.location.href = CART_URL;
-                }
-            } else {
-                alert(data.message || 'カートに追加できませんでした');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('エラーが発生しました');
-        });
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: 'action=add&product_id=' + encodeURIComponent(productId) + '&quantity=' + encodeURIComponent(quantity)
+      })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+        return res.json().catch(() => { throw new Error('JSON parse error'); });
+      })
+      .then(data => {
+        if (data && data.success) {
+          alert('カートに追加しました');
+
+          if (typeof updateCartBadge === 'function') {
+            updateCartBadge(data.cart_count ?? 0);
+          }
+
+          if (confirm('カートを確認しますか？')) {
+            window.location.href = CART_URL;
+          }
+        } else {
+          alert((data && data.message) ? data.message : 'カートに追加できませんでした');
+        }
+      })
+      .catch(error => {
+        console.error('Add to cart error:', error);
+        alert('カート追加でエラーが発生しました。画面を再読み込みしてお試しください。');
+      });
     }
 
     // カートバッジ更新関数
