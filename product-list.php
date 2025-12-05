@@ -149,7 +149,7 @@ try {
       if (strpos($final, 'image/') === 0 || strpos($final, 'uploads/') === 0) {
         $checkPath = __DIR__ . DIRECTORY_SEPARATOR . $final;
         if (!is_file($checkPath)) {
-          $final = 'img/noimage.png';
+          $final = 'image/noimage.svg';
         }
       }
       $p['image'] = $final;
@@ -213,7 +213,7 @@ if (empty($products)) {
         if (strpos($final, 'image/') === 0 || strpos($final, 'uploads/') === 0) {
           $checkPath = __DIR__ . DIRECTORY_SEPARATOR . $final;
           if (!is_file($checkPath)) {
-            $final = 'img/noimage.png';
+            $final = 'image/noimage.svg';
           }
         }
         $p['image'] = $final;
