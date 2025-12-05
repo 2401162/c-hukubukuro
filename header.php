@@ -11,8 +11,8 @@ if (session_status() === PHP_SESSION_NONE) {
 // ✅ ログイン判定
 $isLoggedIn = !empty($_SESSION['customer']);
 
-// サブディレクトリを含めたパス
-$basePath = '/2025/c-hukubukuro/';
+// サブディレクトリを含めたパス（サーバ上の配置に合わせる）
+$basePath = '/2025/Github/c-hukubukuro/';
 
 $myPageUrl = $isLoggedIn ? $basePath . 'mypage/mypage.php' : $basePath . 'rogin-input.php';
 ?>
