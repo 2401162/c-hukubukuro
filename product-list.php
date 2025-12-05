@@ -81,9 +81,17 @@ try {
     
     // ソートをマッピング：データベースの列に沿う
     if ($sort === 'recommend') {
-      // recommended テーブルで並び替え
-      $query = str_replace('FROM product p', 'FROM product p LEFT JOIN recommended r ON r.product_id = p.product_id', $query);
-      $query .= " GROUP BY p.product_id ORDER BY COALESCE(r.sort_order, 9999) ASC, avg_rating DESC, total_sold DESC, p.created_at DESC";
+      // review は r、recommended は r2 として明確に区別
+      $query = str_replace(
+        'FROM product p',
+        'FROM product p LEFT JOIN recommended r2 ON r2.product_id = p.product_id',
+        $query
+      );
+      $query .= " GROUP BY p.product_id 
+                  ORDER BY COALESCE(r2.sort_order, 9999) ASC, 
+                          avg_rating DESC, 
+                          total_sold DESC, 
+                          p.created_at DESC";
     } elseif ($sort === 'ranking') {
       $query .= " GROUP BY p.product_id ORDER BY total_sold DESC, p.created_at DESC";
     } elseif ($sort === 'price_asc') {
