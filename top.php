@@ -174,6 +174,52 @@ function renderProductList($items) {
 
   <script>
     const CART_URL = <?php echo json_encode($basePath . 'cart.php'); ?>;
+    
+    // 探す UI - タグ選択ロジック
+    (function() {
+      const genreWrap = document.getElementById('genreTags');
+      const priceWrap = document.getElementById('priceTags');
+      const searchBtn = document.getElementById('searchBtn');
+      let selectedGenre = null;
+      let selectedPrice = null;
+
+      function clearActive(container) {
+        if (!container) return;
+        Array.from(container.querySelectorAll('.tag')).forEach(el => el.classList.remove('active'));
+      }
+
+      if (genreWrap) {
+        genreWrap.addEventListener('click', function(e) {
+          const b = e.target.closest('.tag.genre');
+          if (!b) return;
+          clearActive(genreWrap);
+          b.classList.add('active');
+          selectedGenre = b.dataset.id || null;
+        });
+      }
+
+      if (priceWrap) {
+        priceWrap.addEventListener('click', function(e) {
+          const b = e.target.closest('.tag.price');
+          if (!b) return;
+          clearActive(priceWrap);
+          b.classList.add('active');
+          selectedPrice = b.dataset.range || null;
+        });
+      }
+
+      if (searchBtn) {
+        searchBtn.addEventListener('click', function() {
+          const sp = new URLSearchParams();
+          if (selectedGenre) sp.set('genre', selectedGenre);
+          if (selectedPrice) sp.set('price', selectedPrice);
+          sp.delete('page');
+          const q = sp.toString();
+          location.href = 'product-list.php' + (q ? ('?' + q) : '');
+        });
+      }
+    })();
+
     function addToCart(productId) {
         // 数量は1固定（トップページでは数量選択なし）
         const quantity = 1;
