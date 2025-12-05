@@ -8,8 +8,19 @@ require 'admin-menu.php';
 $stmt = $pdo->query("SELECT product_id FROM recommended ORDER BY sort_order ASC");
 $current = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+function resolve_image_path(array $item): string {
+    $img = $item['image_path'] ?? '';
+    if (!$img) return 'img/noimage.png';
+    if (preg_match('#^(https?://|//|/)#i', $img)) return $img;
+    if (strpos($img, 'uploads/') === 0) return $img;
+    return 'uploads/' . ltrim($img, '/');
+}
+
 // 商品一覧（候補）取得
-$stmt2 = $pdo->query("SELECT product_id, name, jenre_id FROM product WHERE is_active = 1 ORDER BY product_id ASC");
+$stmt2 = $pdo->query("SELECT product_id, name, jenre_id, image_path 
+                      FROM product 
+                      WHERE is_active = 1 
+                      ORDER BY product_id ASC");
 $products = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
 // products を product_id をキーにした配列にもしておくと便利
@@ -38,7 +49,7 @@ foreach ($products as $p) {
       $p = $productsById[$id];
     ?>
       <div class="item-box" draggable="true" ondragstart="drag(event)" data-id="<?= htmlspecialchars($p['product_id']) ?>">
-        <img src="image/<?= htmlspecialchars($p['jenre_id']) ?>.png" alt="<?= htmlspecialchars($p['name']) ?>">
+        <img src="<?= htmlspecialchars(resolve_image_path($p)) ?>" alt="<?= htmlspecialchars($p['name']) ?>">
       </div>
     <?php endforeach; ?>
   </div>
@@ -47,7 +58,7 @@ foreach ($products as $p) {
   <div id="candidates" class="drop-zone" ondragover="allowDrop(event)" ondrop="drop(event)">
     <?php foreach ($products as $p): if (!in_array($p['product_id'], $current)): ?>
       <div class="item-box" draggable="true" ondragstart="drag(event)" data-id="<?= htmlspecialchars($p['product_id']) ?>">
-        <img src="image/<?= htmlspecialchars($p['jenre_id']) ?>.png" alt="<?= htmlspecialchars($p['name']) ?>">
+        <img src="<?= htmlspecialchars(resolve_image_path($p)) ?>" alt="<?= htmlspecialchars($p['name']) ?>">
       </div>
     <?php endif; endforeach; ?>
   </div>

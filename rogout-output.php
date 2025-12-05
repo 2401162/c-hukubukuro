@@ -2,25 +2,14 @@
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 function h($s){ return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 
-// 戻り先（指定がなければ index.php）
-$redirect = isset($_POST['redirect']) ? $_POST['redirect'] : 'index.php';
+// 戻り先（指定がなければ top.php）
+$redirect = isset($_POST['redirect']) ? $_POST['redirect'] : 'top.php';
 
-// セッション情報をクリア（header.php の仕様に合わせて customer を削除）
+// セッション情報をクリア
 $_SESSION['customer'] = null;
 unset($_SESSION['customer']);
-
-// ついでにカート数などもクリアしたい場合（任意）
-// unset($_SESSION['cart_count']);
-
-// 完全にセッションを破棄したい場合（任意）:
-// $_SESSION = [];
-// if (ini_get("session.use_cookies")) {
-//   $params = session_get_cookie_params();
-//   setcookie(session_name(), '', time()-42000, $params["path"], $params["domain"], $params["secure"], $params["httponly"]);
-// }
-// session_destroy();
-
 ?>
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>

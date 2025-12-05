@@ -1,3 +1,4 @@
+// ...existing code...
 new Vue({
   el: '#app',
   data: {
@@ -16,7 +17,8 @@ new Vue({
       preview: null
     },
     searchQuery: '',
-    searchField: 'all'
+    searchField: 'all',
+    sortBy: 'sold_desc'
   },
   computed: {
     filteredProducts() {
@@ -25,15 +27,34 @@ new Vue({
       if (!q) return items;
       return items.filter(p => {
         const name = String(p.name || '').toLowerCase();
-        const jenre = String(p.jenre_id || '').toLowerCase();
         const desc = String(p.description || '').toLowerCase();
         if (this.searchField === 'name') return name.includes(q);
-        if (this.searchField === 'jenre_id') return jenre.includes(q);
-        return name.includes(q) || jenre.includes(q) || desc.includes(q);
+        if (this.searchField === 'description') return desc.includes(q);
+        return name.includes(q) || desc.includes(q);
       });
+    },
+    sortedProducts() {
+      const items = Array.from(this.filteredProducts);
+      switch (this.sortBy) {
+        case 'sold_desc':
+          return items.sort((a, b) => (Number(b.total_sold) || 0) - (Number(a.total_sold) || 0));
+        case 'sold_asc':
+          return items.sort((a, b) => (Number(a.total_sold) || 0) - (Number(b.total_sold) || 0));
+        case 'revenue_desc':
+          return items.sort((a, b) => (Number(b.total_revenue) || 0) - (Number(a.total_revenue) || 0));
+        case 'new':
+          return items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        default:
+          return items;
+      }
     }
   },
   methods: {
+    resolveImagePath(path) {
+      if (!path) return 'img/noimage.png';
+      if (/^(https?:\/\/|\/|uploads\/)/.test(path)) return path;
+      return 'uploads/' + path.replace(/^\//,'');
+    },
     onFileChange(e, isEdit) {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
@@ -61,7 +82,6 @@ new Vue({
       };
       reader.readAsDataURL(file);
     },
-
     uploadFile(file) {
       const fd = new FormData();
       fd.append('image', file);
@@ -72,11 +92,9 @@ new Vue({
           throw new Error(json && json.error ? json.error : 'アップロード失敗');
         });
     },
-
     showImageModal(item) {
       this.imageModal = item;
     },
-
     addProduct() {
       const doInsert = (imagePath) => {
         const payload = {
@@ -100,7 +118,7 @@ new Vue({
           .then(path => doInsert(path))
           .then(data => {
             if (data && data.success) {
-              this.products.push(data.product || {});
+              this.products.push(Object.assign({}, data.product || this.newProduct, { total_sold: 0, total_revenue: 0 }));
               this.newProduct = { name: '', jenre_id: '', price: '', stock: '', description: '', is_active: '1', imageFile: null, preview: null };
               this.showForm = false;
               alert('商品を追加しました。');
@@ -113,7 +131,7 @@ new Vue({
         doInsert(null)
           .then(data => {
             if (data && data.success) {
-              this.products.push(data.product || {});
+              this.products.push(Object.assign({}, data.product || this.newProduct, { total_sold: 0, total_revenue: 0 }));
               this.newProduct = { name: '', jenre_id: '', price: '', stock: '', description: '', is_active: '1', imageFile: null, preview: null };
               this.showForm = false;
               alert('商品を追加しました。');
@@ -124,7 +142,6 @@ new Vue({
           .catch(err => { console.error(err); alert('通信エラー'); });
       }
     },
-
     updateProduct() {
       if (!this.editProduct) return;
       const proceedUpdate = (imagePath) => {
@@ -151,7 +168,10 @@ new Vue({
           .then(data => {
             if (data && data.success) {
               const idx = this.products.findIndex(p => p.product_id === this.editProduct.product_id);
-              if (idx !== -1) this.products.splice(idx, 1, Object.assign({}, data.product || this.editProduct));
+              if (idx !== -1) {
+                const updated = Object.assign({}, data.product || this.editProduct, { total_sold: this.editProduct.total_sold, total_revenue: this.editProduct.total_revenue });
+                this.products.splice(idx, 1, updated);
+              }
               this.editProduct = null;
               alert('更新しました。');
             } else {
@@ -164,7 +184,10 @@ new Vue({
           .then(data => {
             if (data && data.success) {
               const idx = this.products.findIndex(p => p.product_id === this.editProduct.product_id);
-              if (idx !== -1) this.products.splice(idx, 1, Object.assign({}, data.product || this.editProduct));
+              if (idx !== -1) {
+                const updated = Object.assign({}, data.product || this.editProduct, { total_sold: this.editProduct.total_sold, total_revenue: this.editProduct.total_revenue });
+                this.products.splice(idx, 1, updated);
+              }
               this.editProduct = null;
               alert('更新しました。');
             } else {
@@ -174,15 +197,14 @@ new Vue({
           .catch(err => { console.error(err); alert('通信エラー'); });
       }
     },
-
     startEdit(item) {
       this.editProduct = Object.assign({}, item);
       this.editProduct.preview = null;
       this.editProduct.imageFile = null;
     },
-
     clearSearch() {
       this.searchQuery = '';
     }
   }
 });
+// ...existing code...

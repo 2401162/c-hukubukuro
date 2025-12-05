@@ -3,9 +3,15 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
 require 'header.php';
 require_once 'db-connect.php';
 
+// ソートと絞り込みパラメータ
 $sort = $_GET['sort'] ?? 'all';
-$allowed = ['all','recommend','ranking'];
+$allowed = ['all','recommend','ranking','price_asc','price_desc'];
 if (!in_array($sort, $allowed, true)) { $sort = 'all'; }
+
+// 絞り込み: ジャンル（jenre_id）と価格レンジ（min-max または '5000-' など）
+$filterGenre = isset($_GET['genre']) && $_GET['genre'] !== '' ? (int)$_GET['genre'] : null;
+$filterPrice = isset($_GET['price']) && $_GET['price'] !== '' ? $_GET['price'] : null;
+
 
 /* ==== データベースから商品データ取得 ==== */
 $products = [];
@@ -28,10 +34,13 @@ try {
   $query = "
     SELECT 
       p.product_id AS id,
+      p.jenre_id,
       p.name,
       p.price,
       p.description,
       p.stock,
+      p.image_path,
+      p.created_at,
       COALESCE(ROUND(AVG(DISTINCT r.rating), 1), 0) AS avg_rating,
       COUNT(DISTINCT r.review_id) AS review_count,
       COALESCE(SUM(DISTINCT oi.order_item_id), 0) AS total_sold,
@@ -40,24 +49,110 @@ try {
     LEFT JOIN order_item oi ON oi.product_id = p.product_id
     LEFT JOIN review r ON r.order_item_id = oi.order_item_id AND r.is_active = 1
     WHERE p.is_active = 1
-    GROUP BY p.product_id, p.name, p.price, p.description, p.stock
   ";
+
+  // where 条件を動的に追加
+  $where = [];
+  $params = [];
+  if ($filterGenre) {
+    $where[] = 'p.jenre_id = :genre_id';
+    $params[':genre_id'] = $filterGenre;
+  }
+  if ($filterPrice) {
+    // 価格レンジの形式: min-max, 例えば 1000-3000。末尾が '-' の場合は下限のみ。
+    if (preg_match('#^(\d+)-(\d+)$#', $filterPrice, $m)) {
+      $min = (int)$m[1]; $max = (int)$m[2];
+      $where[] = 'p.price BETWEEN :min_price AND :max_price';
+      $params[':min_price'] = $min;
+      $params[':max_price'] = $max;
+    } elseif (preg_match('#^(\d+)-$#', $filterPrice, $m)) {
+      $min = (int)$m[1];
+      $where[] = 'p.price >= :min_price';
+      $params[':min_price'] = $min;
+    } elseif (preg_match('#^-(\d+)$#', $filterPrice, $m)) {
+      $max = (int)$m[1];
+      $where[] = 'p.price <= :max_price';
+      $params[':max_price'] = $max;
+    }
+  }
+  if (!empty($where)) {
+    $query .= ' AND ' . implode(' AND ', $where);
+  }
     
+    // ソートをマッピング：データベースの列に沿う
     if ($sort === 'recommend') {
-        $query .= " ORDER BY reco DESC, avg_rating DESC, total_sold DESC, p.product_id DESC";
+      // review は r、recommended は r2 として明確に区別
+      $query = str_replace(
+        'FROM product p',
+        'FROM product p LEFT JOIN recommended r2 ON r2.product_id = p.product_id',
+        $query
+      );
+      $query .= " GROUP BY p.product_id 
+                  ORDER BY COALESCE(r2.sort_order, 9999) ASC, 
+                          avg_rating DESC, 
+                          total_sold DESC, 
+                          p.created_at DESC";
     } elseif ($sort === 'ranking') {
-        $query .= " ORDER BY total_sold DESC, p.product_id DESC";
+      $query .= " GROUP BY p.product_id ORDER BY total_sold DESC, p.created_at DESC";
+    } elseif ($sort === 'price_asc') {
+      $query .= " GROUP BY p.product_id ORDER BY p.price ASC, p.created_at DESC";
+    } elseif ($sort === 'price_desc') {
+      $query .= " GROUP BY p.product_id ORDER BY p.price DESC, p.created_at DESC";
     } else {
-        $query .= " ORDER BY p.product_id DESC";
+      // default: 新着(created_at)
+      $query .= " GROUP BY p.product_id ORDER BY p.created_at DESC";
     }
     
     $stmt = $pdo->prepare($query);
+    // バインドパラメータがあれば渡す
+    foreach ($params as $k => $v) {
+      if (is_int($v)) {
+        $stmt->bindValue($k, $v, PDO::PARAM_INT);
+      } else {
+        $stmt->bindValue($k, $v, PDO::PARAM_STR);
+      }
+    }
     $stmt->execute();
     $products = $stmt->fetchAll();
     
-    // 各商品に画像パスを付与（image/[product_id].png形式）
+    // 各商品に画像パスを付与（DB の image_path を優先、無ければ image/[id].png）
     foreach ($products as &$p) {
-      $p['image'] = 'image/' . $p['id'] . '.png';
+      $img = isset($p['image_path']) ? trim($p['image_path']) : '';
+      $final = '';
+      if ($img) {
+        if (preg_match('#^(https?://|//|/)#i', $img)) {
+          // 外部URLはそのまま
+          $final = $img;
+        } elseif (strpos($img, 'uploads/') === 0) {
+          // uploads/ の場合はサーバ上のファイル存在を確認してから使用
+          $serverPath = __DIR__ . DIRECTORY_SEPARATOR . $img;
+          if (is_file($serverPath)) {
+            $final = $img;
+          } else {
+            // ファイルが無ければフォールバック
+            $final = 'image/' . $p['id'] . '.png';
+          }
+        } else {
+          // 相対パスが指定されている場合は uploads/ を付与して確認
+          $candidate = 'uploads/' . ltrim($img, '/');
+          $serverPath = __DIR__ . DIRECTORY_SEPARATOR . $candidate;
+          if (is_file($serverPath)) {
+            $final = $candidate;
+          } else {
+            $final = 'image/' . $p['id'] . '.png';
+          }
+        }
+      } else {
+        $final = 'image/' . $p['id'] . '.png';
+      }
+      // 最終手段: フォールバック画像も存在しなければ共通の noimage を使う
+      if (strpos($final, 'image/') === 0 || strpos($final, 'uploads/') === 0) {
+        $checkPath = __DIR__ . DIRECTORY_SEPARATOR . $final;
+        if (!is_file($checkPath)) {
+          $final = 'img/noimage.png';
+        }
+      }
+      $p['image'] = $final;
     }
     unset($p);
     
@@ -75,19 +170,53 @@ $usedFallback = false;
 // dbError の有無に関わらず products が空ならフォールバックを試みる
 if (empty($products)) {
   try {
-    $fbStmt = $pdo->prepare(
-      "SELECT product_id AS id, name, price, description, stock, 0 AS avg_rating, 0 AS review_count, 0 AS total_sold, 0 AS reco
-       FROM product
-       WHERE is_active = 1
-       ORDER BY product_id DESC"
-    );
+    // フォールバックも絞り込み条件を考慮して取得
+    $fbQuery = "SELECT product_id AS id, jenre_id, name, price, description, stock, image_path, 0 AS avg_rating, 0 AS review_count, 0 AS total_sold, 0 AS reco FROM product WHERE is_active = 1";
+    if (!empty($where)) {
+      $fbQuery .= ' AND ' . implode(' AND ', $where);
+    }
+    $fbQuery .= ' ORDER BY created_at DESC';
+    $fbStmt = $pdo->prepare($fbQuery);
+    foreach ($params as $k => $v) {
+      if (is_int($v)) { $fbStmt->bindValue($k, $v, PDO::PARAM_INT); }
+      else { $fbStmt->bindValue($k, $v, PDO::PARAM_STR); }
+    }
     $fbStmt->execute();
     $fb = $fbStmt->fetchAll();
     if (!empty($fb)) {
       $products = $fb;
       foreach ($products as &$p) {
-        // 画像パスを付与（image/[product_id].png形式）
-        $p['image'] = 'image/' . $p['id'] . '.png';
+        $img = isset($p['image_path']) ? trim($p['image_path']) : '';
+        $final = '';
+        if ($img) {
+          if (preg_match('#^(https?://|//|/)#i', $img)) {
+            $final = $img;
+          } elseif (strpos($img, 'uploads/') === 0) {
+            $serverPath = __DIR__ . DIRECTORY_SEPARATOR . $img;
+            if (is_file($serverPath)) {
+              $final = $img;
+            } else {
+              $final = 'image/' . $p['id'] . '.png';
+            }
+          } else {
+            $candidate = 'uploads/' . ltrim($img, '/');
+            $serverPath = __DIR__ . DIRECTORY_SEPARATOR . $candidate;
+            if (is_file($serverPath)) {
+              $final = $candidate;
+            } else {
+              $final = 'image/' . $p['id'] . '.png';
+            }
+          }
+        } else {
+          $final = 'image/' . $p['id'] . '.png';
+        }
+        if (strpos($final, 'image/') === 0 || strpos($final, 'uploads/') === 0) {
+          $checkPath = __DIR__ . DIRECTORY_SEPARATOR . $final;
+          if (!is_file($checkPath)) {
+            $final = 'img/noimage.png';
+          }
+        }
+        $p['image'] = $final;
       }
       unset($p);
       $usedFallback = true;
@@ -95,6 +224,30 @@ if (empty($products)) {
   } catch (PDOException $e) {
     error_log('Product fallback error: ' . $e->getMessage());
   }
+}
+
+// デバッグ出力: ?debug=1 を付けると画像URLとサーバ上の存在を表示
+if (isset($_GET['debug']) && $_GET['debug'] == '1') {
+  echo "<div style='max-width:1200px;margin:12px auto;padding:12px;background:#fff;border:1px solid #eee;'>";
+  echo "<h3>DEBUG: products (showing image paths and file existence)</h3>";
+  echo "<pre>" . htmlspecialchars(json_encode($products, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') . "</pre>";
+  echo "<ul>";
+  foreach ($products as $pp) {
+    $img = $pp['image'] ?? '';
+    $exists = 'n/a';
+    if ($img) {
+      // check server path if local relative
+      if (strpos($img, 'uploads/') === 0 || strpos($img, 'image/') === 0) {
+        $serverPath = __DIR__ . DIRECTORY_SEPARATOR . $img;
+        $exists = is_file($serverPath) ? 'yes' : 'no';
+      } else {
+        $exists = 'external';
+      }
+    }
+    echo '<li>id=' . htmlspecialchars($pp['id']) . ' image=' . htmlspecialchars($img) . ' exists=' . $exists . '</li>';
+  }
+  echo "</ul>";
+  echo "</div>";
 }
 
 // NOTE: ダミーデータは表示しない。実際に登録されている商品のみ表示する。
@@ -203,7 +356,7 @@ function renderPage(page=1){
       ? `<img class="thumb" src="${escapeAttr(imgSrc)}" alt="${escapeHtml(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><div style="background:#f0f0f0;width:100%;aspect-ratio:1/1;display:none;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;"><span>画像未設定</span></div>`
       : `<div style="background:#f0f0f0;width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;text-align:center;"><span>画像未設定</span></div>`;
     return `
-    <a class="card" href="product-detail.php?id=${p.id}" aria-label="${escapeHtml(p.name)}の詳細へ">
+    <a class="card" href="syouhin/syouhin_page.php?id=${p.id}" aria-label="${escapeHtml(p.name)}の詳細へ">
       ${thumbHtml}
       <div class="body">
         <div class="name">${escapeHtml(p.name)}</div>

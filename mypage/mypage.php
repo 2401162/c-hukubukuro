@@ -3,13 +3,21 @@ session_start();
 require __DIR__ . '/../db-connect.php';
 
 // ログインチェック
-if (!isset($_SESSION['customer_id'])) {
+if (!isset($_SESSION['customer'])) {
     // 未ログインなら login.php にリダイレクト
-    header('Location: rogin-input.php');
+    header('Location: /rogin-input.php');
     exit;
 }
 
-$customer_id = $_SESSION['customer_id'];
+function resolve_image_path(array $item): string {
+    $img = $item['image_path'] ?? '';
+    if (!$img) return 'img/noimage.png';
+    if (preg_match('#^(https?://|//|/)#i', $img)) return $img;
+    if (strpos($img, 'uploads/') === 0) return $img;
+    return 'uploads/' . ltrim($img, '/');
+}
+
+$customer_id = $_SESSION['customer']['customer_id'];
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -34,9 +42,11 @@ try {
         SELECT 
             o.order_id,
             o.created_at AS order_date,
+            oi.order_item_id,
             p.product_id,
             p.name AS product_name,
             oi.quantity,
+            p.image_path,
             oi.unit_price,
             oi.subtotal,
             r.review_id
@@ -51,6 +61,8 @@ try {
         ORDER BY o.created_at DESC;
     ";
 
+    
+
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$customer_id]);
     $orders = $stmt->fetchAll();
@@ -63,7 +75,7 @@ try {
         foreach ($orders as $order) {
             echo '<div class="purchase-card">';
             echo '<div class="card-image">';
-            echo '<img alt="image" src="image/'.$order['product_id'].'.png" class="order_image">';
+            echo '<img alt="image" src="../'.htmlspecialchars($order['image_path']).'" class="order_image">';
             echo '</div>';
 
             echo '<div class="card-main">';
@@ -80,9 +92,9 @@ try {
             echo '<h3>'.number_format($order['subtotal']).'円</h3>';
 
             if ($order['review_id']) {
-                echo '<a href="review.php?order_id='.$order['order_id'].'">レビュー再投稿</a>';
+                echo '<a href="/2025/prac/review.php?order_item_id=' . $order['order_item_id'] . '">レビュー再投稿</a>';
             } else {
-                echo '<a href="review.php?order_id='.$order['order_id'].'">レビュー</a>';
+                echo '<a href="/2025/prac/review.php?order_item_id=' . $order['order_item_id'] . '">レビューを書く</a>';
             }
 
             echo '</div>';

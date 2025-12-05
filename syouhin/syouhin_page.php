@@ -1,3 +1,4 @@
+<?php session_start(); ?>
 <?php require_once __DIR__ . '/../db-connect.php'; ?>
 <?php
 try {
@@ -57,11 +58,10 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
 </head>
 <body>
 <?php require __DIR__ . '/../header.php'; ?>
-
+<a href="../product-list.php" class="list-link">商品一覧</a>
 <div class="syouhin">
-    
     <div class="product">
-        <p><img alt="image" src="../image/<?= $product['product_id'] ?>.png"></p>
+        <p><img alt="image" src="../<?= $product['image_path'] ?>"></p>
         <form action="../cart.php" method="post">
             <h3><?= htmlspecialchars($product['name'], ENT_QUOTES) ?></h3>
             <p class="price">￥<?= number_format($product['price']) ?><small>税込み</small></p>
@@ -126,12 +126,13 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
                 $rating = max(0, min(5, (int)$review['rating']));
                 $stars = str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
                 $comment = nl2br(htmlspecialchars($review['comment'], ENT_QUOTES));
-                $date = htmlspecialchars($review['created_at'], ENT_QUOTES);
+                $reviewDate = new DateTime($review['created_at']);
+                $date = $reviewDate->format('Y年n月j日');
             ?>
                 <div class="review-box">
                     <div class="review-header"><strong><?= $name ?></strong> <span class="stars"><?= $stars ?></span></div>
                     <p class="review-comment"><?= $comment ?></p>
-                    <small class="review-date"><?= $date ?></small>
+                    <small class="review-date"><?= htmlspecialchars($date, ENT_QUOTES); ?></small>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>
@@ -147,7 +148,7 @@ $starsDisplay = str_repeat('★', $fullStars) . str_repeat('☆', $emptyStars);
         // 選択された数量を取得
         const quantity = document.querySelector('select[name="quantity"]').value;
 
-        fetch('cart.php', {
+        fetch('/2025/c-hukubukuro/cart.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',

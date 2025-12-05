@@ -11,8 +11,15 @@ if (session_status() === PHP_SESSION_NONE) {
 // ✅ ログイン判定
 $isLoggedIn = !empty($_SESSION['customer']);
 
+<<<<<<< HEAD
 // ルートパス（必ず絶対パスに）
 $basePath = '/2025/c-hukubukuro/';
+=======
+// サブディレクトリを含めたパス
+$basePath = '/2025/c-hukubukuro/';
+
+$myPageUrl = $isLoggedIn ? $basePath . 'mypage/mypage.php' : $basePath . 'rogin-input.php';
+>>>>>>> main
 ?>
 
 <style>
@@ -69,6 +76,15 @@ $basePath = '/2025/c-hukubukuro/';
     text-decoration: none;
   }
 
+<<<<<<< HEAD
+=======
+  .site-header .actions a svg {
+    width: 36px;
+    height: 36px;
+    display: block;
+  }
+
+>>>>>>> main
   .site-header .actions a:hover { opacity: .85; }
 
   .cart-badge {
@@ -84,7 +100,15 @@ $basePath = '/2025/c-hukubukuro/';
     font-weight: 700;
   }
 
+<<<<<<< HEAD
   .user-menu { position: relative; }
+=======
+  /* ✅ ドロップダウンメニュー */
+  .user-menu {
+    position: relative;
+  }
+
+>>>>>>> main
   .user-menu-toggle {
     cursor: pointer;
     color: #fff;
@@ -94,7 +118,20 @@ $basePath = '/2025/c-hukubukuro/';
     height: 40px;
     transition: opacity .15s;
   }
+<<<<<<< HEAD
   .user-menu-toggle:hover { opacity: .85; }
+=======
+
+  .user-menu-toggle:hover {
+    opacity: .85;
+  }
+
+  .user-menu-toggle svg {
+    width: 36px;
+    height: 36px;
+    display: block;
+  }
+>>>>>>> main
 
   .user-dropdown {
     position: absolute;
@@ -164,15 +201,25 @@ $basePath = '/2025/c-hukubukuro/';
   <!-- 右アイコン -->
   <nav class="actions">
 
+<<<<<<< HEAD
     <?php if ($isLoggedIn): ?>
       <!-- ログイン済み：ドロップダウン -->
       <div class="user-menu">
         <div class="user-menu-toggle" tabindex="0" aria-label="ユーザーメニュー">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+=======
+    <!-- ✅ ユーザーメニュー（ドロップダウン） -->
+    <?php if ($isLoggedIn): ?>
+      <!-- ログイン済み：ドロップダウンメニュー -->
+      <div class="user-menu">
+        <div class="user-menu-toggle" tabindex="0" aria-label="ユーザーメニュー">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+>>>>>>> main
             <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="#fff"/>
             <path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8v1H4v-1z" fill="#fff"/>
           </svg>
         </div>
+<<<<<<< HEAD
 
         <div class="user-dropdown">
           <a href="<?= $basePath . 'mypage/mypage.php' ?>">マイページ</a>
@@ -185,15 +232,37 @@ $basePath = '/2025/c-hukubukuro/';
       <a href="<?= $basePath . 'rogin-input.php' ?>" aria-label="ログイン">
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
           <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="#fff"/>
+=======
+        <div class="user-dropdown">
+          <a href="<?= htmlspecialchars($basePath . 'mypage/mypage.php', ENT_QUOTES, 'UTF-8') ?>">
+            マイページ
+          </a>
+          <a href="<?= htmlspecialchars($basePath . 'rogout-input.php', ENT_QUOTES, 'UTF-8') ?>">
+            ログアウト
+          </a>
+        </div>
+      </div>
+    <?php else: ?>
+      <!-- 未ログイン：ログインページへ直接リンク -->
+      <a href="<?= htmlspecialchars($basePath . 'rogin-input.php', ENT_QUOTES, 'UTF-8') ?>" aria-label="ログイン">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+          <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="#ffffffff"/>
+>>>>>>> main
           <path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8v1H4v-1z" fill="#fff"/>
         </svg>
       </a>
     <?php endif; ?>
 
     <!-- カート -->
+<<<<<<< HEAD
     <a href="<?= $basePath . 'cart.php' ?>" aria-label="カート">
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
         <path d="M7 4h-2l-1 2v2h2l3.6 7.59-1.35 2.45C8.89 18.76 9.5 20 11 20h8v-2h-2.42l-.22-.37L12.1 15h5.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49-.02-.02c.07-.14.08-.3.08-.46 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59L6.5 16h12.02" fill="#fff"/>
+=======
+    <a href="<?= $basePath ?>cart.php" aria-label="カート">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <path d="M7 4h-2l-1 2v2h2l3.6 7.59-1.35 2.45C8.89 18.76 9.5 20 11 20h8v-2h-7.42c-.14 0-.25-.11-.25-.25l.03-.12L12.1 15h5.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49-.02-.02c.07-.14.08-.3.08-.46 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59L6.5 16h12.02" fill="#fff"/>
+>>>>>>> main
       </svg>
 
       <?php

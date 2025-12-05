@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . 'db-connect.php'; // DB接続情報
+require_once __DIR__ . '/db-connect.php'; // DB接続情報
 
 // ==============================
 // DB接続
@@ -13,31 +13,40 @@ try {
 }
 
 // ==============================
-// 商品ID取得（URL）
-// 例：review.php?product_id=1
+// order_item_id 取得（URL）
+// 例：review.php?order_item_id=123
 // ==============================
-$product_id = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 1;
-
-// ==============================
-// 商品情報取得（product テーブル）
-// ==============================
-$sql = "SELECT product_id, jenre_id, name, price, stock, description, is_active, created_at, image_path
-        FROM product
-        WHERE product_id = :id";
-$stmt = $pdo->prepare($sql);
-$stmt->bindValue(':id', $product_id, PDO::PARAM_INT);
-$stmt->execute();
-$product = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$product) {
-    exit('指定された商品が見つかりませんでした。');
+$order_item_id = isset($_GET['order_item_id']) ? (int)$_GET['order_item_id'] : 0;
+if ($order_item_id === 0) {
+    exit("不正なアクセス：order_item_id がありません");
 }
 
-// 画像パス（image_path をそのまま使う想定）
-$image_src = htmlspecialchars($product['image_path'], ENT_QUOTES, 'UTF-8');
+// ==============================
+// 注文明細と商品情報取得
+// ==============================
+$sql = "SELECT 
+          oi.order_item_id,
+          p.product_id,
+          p.name,
+          p.image_path,
+          p.description
+        FROM order_item oi
+        JOIN product p ON oi.product_id = p.product_id
+        WHERE oi.order_item_id = :oid";
+$stmt = $pdo->prepare($sql);
+$stmt->bindValue(':oid', $order_item_id, PDO::PARAM_INT);
+$stmt->execute();
+$order = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$order) {
+    exit('この注文詳細は存在しません。');
+}
+
+// 画像パス
+$image_src = htmlspecialchars($order['image_path'], ENT_QUOTES, 'UTF-8');
 
 // ==============================
-// レビュー投稿処理（review テーブルに INSERT）
+// レビュー投稿処理
 // ==============================
 $posted = false;
 $error  = '';
@@ -50,15 +59,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = '星を選択してください。';
     } else {
         try {
-            // order_item_id は、今は未連携なので NULL を入れておく
-            $sql = "INSERT INTO review (order_item_id, rating, comment, is_active, created_at, updated_at)
-                    VALUES (:order_item_id, :rating, :comment, 1, NOW(), NOW())";
+            // 既存レビューがあれば削除
+            $sql = "DELETE FROM review WHERE order_item_id = :oid";
             $stmt = $pdo->prepare($sql);
-            $stmt->bindValue(':order_item_id', null, PDO::PARAM_NULL); // 注文と紐付けるならここを変更
+            $stmt->bindValue(':oid', $order_item_id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            // 新しいレビューを挿入
+            $sql = "INSERT INTO review (order_item_id, rating, comment, is_active, created_at, updated_at)
+                    VALUES (:oid, :rating, :comment, 1, NOW(), NOW())";
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':oid', $order_item_id, PDO::PARAM_INT);
             $stmt->bindValue(':rating', $rating, PDO::PARAM_INT);
             $stmt->bindValue(':comment', $comment, PDO::PARAM_STR);
             $stmt->execute();
+
             $posted = true;
+            $error = 'レビューを更新しました。';
         } catch (PDOException $e) {
             $error = 'レビューの登録に失敗しました：' . $e->getMessage();
         }
@@ -66,164 +83,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ==============================
-// レビュー一覧取得
-// ※ このテーブルには product_id がないので、
-//    今は「この商品に対するレビュー」という絞り込みができない。
-//    ひとまず is_active=1 の全レビューを新しい順で表示する形。
-//    → 後で review テーブルに product_id カラムを追加すると綺麗に紐付け可能。
+// レビュー一覧取得（この注文商品のレビューだけ）
 // ==============================
-$sql = "SELECT review_id, order_item_id, rating, comment, is_active, created_at, updated_at
-        FROM review
-        WHERE is_active = 1
-        ORDER BY created_at DESC";
+$sql = "SELECT r.review_id, r.order_item_id, r.rating, r.comment, r.is_active, r.created_at
+        FROM review r
+        JOIN order_item oi ON r.order_item_id = oi.order_item_id
+        WHERE oi.product_id = :pid AND r.is_active = 1
+        ORDER BY r.created_at DESC";
 $stmt = $pdo->prepare($sql);
+$stmt->bindValue(':pid', $order['product_id'], PDO::PARAM_INT);
 $stmt->execute();
 $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-include __DIR__ . 'header.php';
+include __DIR__ . '/header.php';
 ?>
 
 <style>
-.review-wrapper {
-  max-width: 900px;
-  margin: 40px auto 80px;
-  font-family: "Noto Sans JP", sans-serif;
-}
-
-.review-main {
-  display: flex;
-  gap: 60px;
-  align-items: flex-start;
-}
-
-.review-image-box {
-  width: 260px;
-  height: 260px;
-  background: #6f6666;
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 18px;
-}
-
-.review-image-box img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.review-right {
-  flex: 1;
-}
-
-.review-question {
-  font-size: 18px;
-  margin-bottom: 20px;
-}
-
-.product-name {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
-/* 星評価 */
-.star-rating {
-  font-size: 32px;
-  color: #ffcc00;
-  cursor: pointer;
-}
-
-.star-rating span {
-  margin-right: 5px;
-}
-
-/* レビュー入力 */
-.review-label {
-  margin-top: 40px;
-  margin-bottom: 10px;
-  font-size: 16px;
-}
-
-.review-textarea {
-  width: 100%;
-  height: 220px;
-  border: 1px solid #ccc;
-  padding: 10px;
-  font-size: 14px;
-  resize: vertical;
-  box-sizing: border-box;
-}
-
-/* 送信ボタン */
-.review-submit-area {
-  text-align: right;
-  margin-top: 30px;
-}
-
-.review-submit-btn {
-  background: #ffcc00;
-  border: none;
-  padding: 10px 50px;
-  border-radius: 3px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-/* メッセージ */
-.review-message {
-  margin-bottom: 20px;
-  padding: 10px 15px;
-  background: #e6ffe6;
-  border: 1px solid #8fd88f;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.review-error {
-  margin-bottom: 20px;
-  padding: 10px 15px;
-  background: #ffe6e6;
-  border: 1px solid #ff8f8f;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-/* レビュー一覧 */
-.review-list {
-  margin-top: 40px;
-}
-
-.review-list h3 {
-  margin-bottom: 10px;
-}
-
-.review-item {
-  border-top: 1px solid #ddd;
-  padding: 15px 0;
-}
-
-.review-item:first-child {
-  border-top: none;
-}
-
-.review-item-rating {
-  color: #ffcc00;
-  margin-bottom: 5px;
-  font-size: 18px;
-}
-
-.review-item-date {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 5px;
-}
-
-.review-item-comment {
-  white-space: pre-wrap;
-  font-size: 14px;
-}
+/* ここは既存のCSSをそのまま使用 */
+.review-wrapper {max-width: 900px; margin: 40px auto 80px; font-family: "Noto Sans JP", sans-serif; }
+.review-main { display: flex; gap: 60px; align-items: flex-start; }
+.review-image-box { width: 260px; height: 260px; background: #6f6666; color: #fff; display: flex; justify-content: center; align-items: center; font-size: 18px; }
+.review-image-box img { width: 100%; height: 100%; object-fit: cover; }
+.review-right { flex: 1; }
+.review-question { font-size: 18px; margin-bottom: 20px; }
+.product-name { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+.star-rating { font-size: 32px; color: #ffcc00; cursor: pointer; }
+.star-rating span { margin-right: 5px; }
+.review-label { margin-top: 40px; margin-bottom: 10px; font-size: 16px; }
+.review-textarea { width: 100%; height: 220px; border: 1px solid #ccc; padding: 10px; font-size: 14px; resize: vertical; box-sizing: border-box; }
+.review-submit-area { text-align: right; margin-top: 30px; }
+.review-submit-btn { background: #ffcc00; border: none; padding: 10px 50px; border-radius: 3px; font-size: 16px; cursor: pointer; }
+.review-message { margin-bottom: 20px; padding: 10px 15px; background: #e6ffe6; border: 1px solid #8fd88f; border-radius: 4px; font-size: 14px; }
+.review-error { margin-bottom: 20px; padding: 10px 15px; background: #ffe6e6; border: 1px solid #ff8f8f; border-radius: 4px; font-size: 14px; }
+.review-list { margin-top: 40px; }
+.review-list h3 { margin-bottom: 10px; }
+.review-item { border-top: 1px solid #ddd; padding: 15px 0; }
+.review-item:first-child { border-top: none; }
+.review-item-rating { color: #ffcc00; margin-bottom: 5px; font-size: 18px; }
+.review-item-date { font-size: 12px; color: #666; margin-bottom: 5px; }
+.review-item-comment { white-space: pre-wrap; font-size: 14px; }
 </style>
 
 <div class="review-wrapper">
@@ -240,21 +138,19 @@ include __DIR__ . 'header.php';
     </div>
   <?php endif; ?>
 
-  <form action="review.php?product_id=<?= htmlspecialchars($product_id, ENT_QUOTES, 'UTF-8') ?>" method="post">
+  <form action="review.php?order_item_id=<?= $order_item_id ?>" method="post">
     <div class="review-main">
-      <!-- 左：商品画像 -->
       <div class="review-image-box">
-        <?php if (!empty($product['image_path'])): ?>
+        <?php if (!empty($order['image_path'])): ?>
           <img src="<?= $image_src ?>" alt="商品画像">
         <?php else: ?>
           商品画像
         <?php endif; ?>
       </div>
 
-      <!-- 右：商品名＆星評価 -->
       <div class="review-right">
         <div class="product-name">
-          <?= htmlspecialchars($product['name'], ENT_QUOTES, 'UTF-8'); ?>
+          <?= htmlspecialchars($order['name'], ENT_QUOTES, 'UTF-8'); ?>
         </div>
 
         <div class="review-question">商品はいかがでしたか？</div>
@@ -271,20 +167,16 @@ include __DIR__ . 'header.php';
       </div>
     </div>
 
-    <!-- レビュー本文 -->
     <div class="review-label">レビューを書く</div>
     <textarea name="comment" class="review-textarea"></textarea>
 
-    <!-- 投稿ボタン -->
     <div class="review-submit-area">
       <button type="submit" class="review-submit-btn">投稿</button>
     </div>
   </form>
 
-  <!-- レビュー一覧 -->
   <div class="review-list">
     <h3>みんなのレビュー</h3>
-
     <?php if (empty($reviews)): ?>
       <p>まだレビューはありません。</p>
     <?php else: ?>
@@ -309,7 +201,6 @@ include __DIR__ . 'header.php';
 </div>
 
 <script>
-// 星クリックで評価セット
 const stars = document.querySelectorAll('#star-rating span');
 const ratingInput = document.getElementById('rating-value');
 
@@ -317,16 +208,9 @@ stars.forEach(star => {
   star.addEventListener('click', () => {
     const value = Number(star.dataset.value);
     ratingInput.value = value;
-
-    stars.forEach(s => {
-      if (Number(s.dataset.value) <= value) {
-        s.textContent = '★';
-      } else {
-        s.textContent = '☆';
-      }
-    });
+    stars.forEach(s => s.textContent = Number(s.dataset.value) <= value ? '★' : '☆');
   });
 });
 </script>
 
-<?php include __DIR__ . 'footer.php'; ?>
+<?php include __DIR__ . '/footer.php'; ?>

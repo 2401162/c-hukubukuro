@@ -8,6 +8,12 @@
     margin: 0 auto;
 }
 
+.list-link {
+    margin: 5px;
+    font-size: 15px;
+    text-align: center;
+}
+
 /* ===== 商品部分 ===== */
 .product {
     display: flex;
@@ -121,7 +127,8 @@ button:hover {
 }
 
 .stars {
-    font-size: 25px;
+    margin-left: 8px;
+    font-size: 18px;
 }
 
 .review-comment {
