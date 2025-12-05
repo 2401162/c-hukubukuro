@@ -32,20 +32,19 @@ $ranking_stmt = $pdo->prepare("
 ");
 $ranking_stmt->execute();
 $ranking = $ranking_stmt->fetchAll();
-
 // トップに表示するジャンルを指定の順で取得（ゲーム, アニメ, お菓子, ぬいぐるみ, 文房具）
 $genres = [];
 $desired = ['ゲーム','アニメ','お菓子','ぬいぐるみ','文房具'];
 try {
-  // genre テーブルのカラムは genre_id / genre_name
   $placeholders = implode(',', array_fill(0, count($desired), '?'));
   $sql = "SELECT genre_id AS id, genre_name AS name FROM genre WHERE genre_name IN ($placeholders) ORDER BY FIELD(genre_name, 'ゲーム','アニメ','お菓子','ぬいぐるみ','文房具')";
   $gstmt = $pdo->prepare($sql);
   $gstmt->execute($desired);
   $genres = $gstmt->fetchAll();
 } catch (PDOException $e) {
-  // ジャンル取得失敗は無視（UI は空表示になる）
+  // 無視
 }
+
 // 画像パスを決めるヘルパー
 function resolve_image_path(array $item): string {
   $img = $item['image_path'] ?? '';
@@ -55,7 +54,7 @@ function resolve_image_path(array $item): string {
   return 'uploads/' . ltrim($img, '/');
 }
 
-// 出力関数（リンクを product-detail.php に接続）
+// 商品カード描画
 function renderProductList($items) {
   foreach ($items as $item) {
     $image = htmlspecialchars(resolve_image_path($item), ENT_QUOTES, 'UTF-8');
@@ -174,37 +173,44 @@ function renderProductList($items) {
   </main>
 
   <script>
+    const CART_URL = <?php echo json_encode($basePath . 'cart.php'); ?>;
     function addToCart(productId) {
         // 数量は1固定（トップページでは数量選択なし）
         const quantity = 1;
 
-        fetch('/2025/c-hukubukuro/cart.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: 'action=add&product_id=' + productId + '&quantity=' + quantity
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('カートに追加しました');
-                
-                // カートバッジを更新
-                updateCartBadge(data.cart_count);
-                
-                if (confirm('カートを確認しますか？')) {
-                    window.location.href = '/2025/c-hukubukuro/cart.php';
-                }
-            } else {
-                alert(data.message || 'カートに追加できませんでした');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('エラーが発生しました');
-        });
+      fetch(CART_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: 'action=add&product_id=' + encodeURIComponent(productId) + '&quantity=' + encodeURIComponent(quantity)
+      })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+        return res.json().catch(() => { throw new Error('JSON parse error'); });
+      })
+      .then(data => {
+        if (data && data.success) {
+          alert('カートに追加しました');
+
+          if (typeof updateCartBadge === 'function') {
+            updateCartBadge(data.cart_count ?? 0);
+          }
+
+          if (confirm('カートを確認しますか？')) {
+            window.location.href = CART_URL;
+          }
+        } else {
+          alert((data && data.message) ? data.message : 'カートに追加できませんでした');
+        }
+      })
+      .catch(error => {
+        console.error('Add to cart error:', error);
+        alert('カート追加でエラーが発生しました。画面を再読み込みしてお試しください。');
+      });
     }
 
     // カートバッジ更新関数
