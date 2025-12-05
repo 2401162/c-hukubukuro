@@ -4,13 +4,7 @@
       <span class="footer-title">福袋販売サイト</span>
       <small class="copyright">&copy; <?= date('Y') ?> Fukubukuro Store</small>
     </div>
-    <nav class="footer-links" aria-label="フッターナビ">
-      <a href="/about.php">運営情報</a>
-      <a href="/guide.php">ご利用ガイド</a>
-      <a href="/contact.php">お問い合わせ</a>
-      <a href="/terms.php">利用規約</a>
-      <a href="/privacy.php">プライバシー</a>
-    </nav>
+   
   </div>
 </footer>
 
